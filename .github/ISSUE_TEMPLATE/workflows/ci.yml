@@ -1,0 +1,41 @@
+name: CI
+on: 
+  pull_request:
+  workflow_dispatch:
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+
+      - name: Install packages
+        run: pip install -r requirements.txt
+        
+      - name: Analysing the code with pylint
+        run: |
+          pylint $(git ls-files '*.py') --fail-under=8.5
+
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: 'pip'
+
+      - name: Install packages
+        run: pip install -r requirements.txt
+
+      - name: Run pytest
+        run: pytest
