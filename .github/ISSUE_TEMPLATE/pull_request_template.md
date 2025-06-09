@@ -10,7 +10,7 @@ assignees: ''
 ## Description
 <!--- Describe your changes in detail -->
 
-### What user story are you considering for this request?
+## What user story are you considering for this request?
 <!--- Always keep in mind a potential user when writing a request. -->
 <!--- "As a X, I want to X, so I can X" -->
 
