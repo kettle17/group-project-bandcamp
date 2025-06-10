@@ -23,7 +23,8 @@ def save_api_data(api_data: dict, file_path: str) -> bool:
     pass
 
 
-def run_extract(start_date: int, file_path: str,
+def run_extract(file_path: str,
+                curr_time: int = int(time.time()),
                 base_api_url: str = "https://bandcamp.com/api/salesfeed/1/get?start_date="):
     """Function that runs the above three all in one."""
     pass
@@ -35,6 +36,4 @@ def get_time_offset(curr_time: int = int(time.time()), offset: int = 200) -> int
 
 
 if __name__ == "__main__":
-    print(get_time_offset())
-
-    # run_extract()
+    run_extract('')
