@@ -12,7 +12,7 @@ def get_api_request(start_date: int, base_api_url: str) -> dict:
 
 
 def fetch_api_data(start_date: int, base_api_url: str) -> dict:
-    """Connects to the API and returns the data.
+    """Returns data fetched from BandCamp's API.
     Start date is a seconds from epoch int that gets called in the API under start_date.
     This is the report that gets called every 2 minutes."""
     pass
