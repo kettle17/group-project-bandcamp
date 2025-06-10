@@ -25,49 +25,49 @@ CREATE TABLE country (
 
 CREATE TABLE artist (
     artist_id BIGINT GENERATED ALWAYS AS IDENTITY,
-    artist_name VARCHAR(100),
+    artist_name VARCHAR(100) NOT NULL,
     PRIMARY KEY (artist_id)
 );
 
 CREATE TABLE tag (
     tag_id BIGINT GENERATED ALWAYS AS IDENTITY,
-    tag_name VARCHAR(50),
+    tag_name VARCHAR(50) NOT NULL,
     PRIMARY KEY (tag_id)
 );
 
 CREATE TABLE merchandise (
     merchandise_id BIGINT GENERATED ALWAYS AS IDENTITY,
-    art_url VARCHAR(255),
-    url VARCHAR(255),
-    price_at_point_of_sale DECIMAL,
+    art_url VARCHAR(255) NOT NULL,
+    url VARCHAR(255) NOT NULL,
+    price_at_point_of_sale DECIMAL NOT NULL,
     PRIMARY KEY (merchandise_id)
 );
 
 CREATE TABLE album (
     album_id BIGINT GENERATED ALWAYS AS IDENTITY,
-    album_name VARCHAR(50),
-    release_date DATE,
+    album_name VARCHAR(50) NOT NULL,
+    release_date DATE NOT NULL,
     art_url VARCHAR(255),
     url VARCHAR(255),
-    price_at_point_of_sale DECIMAL,
+    price_at_point_of_sale DECIMAL NOT NULL,
     PRIMARY KEY (album_id)
 );
 
 CREATE TABLE track (
     track_id BIGINT GENERATED ALWAYS AS IDENTITY,
-    track_name VARCHAR(50),
-    release_date DATE,
+    track_name VARCHAR(50) NOT NULL,
+    release_date DATE NOT NULL,
     art_url VARCHAR(255),
     url VARCHAR(255),
-    price_at_point_of_sale DECIMAL,
+    price_at_point_of_sale DECIMAL NOT NULL,
     PRIMARY KEY (track_id)
 );
 
 CREATE TABLE sale (
     sale_id BIGINT GENERATED ALWAYS AS IDENTITY,
-    utc_date TIMESTAMP,
-    amount_paid_usd DECIMAL,
-    country_id SMALLINT,
+    utc_date TIMESTAMP NOT NULL,
+    amount_paid_usd DECIMAL NOT NULL,
+    country_id SMALLINT NOT NULL,
     PRIMARY KEY (sale_id),
     FOREIGN KEY (country_id) REFERENCES country (country_id)
 );
@@ -77,8 +77,8 @@ CREATE TABLE sale (
 CREATE TABLE sale_merchandise_assignment (
 
     merchandise_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
-    merchandise_id BIGINT,
-    sale_id BIGINT,
+    merchandise_id BIGINT NOT NULL,
+    sale_id BIGINT NOT NULL,
     PRIMARY KEY (merchandise_assignment_id),
     FOREIGN KEY (merchandise_id) REFERENCES merchandise (merchandise_id),
     FOREIGN key (sale_id) REFERENCES sale (sale_id)
@@ -88,8 +88,8 @@ CREATE TABLE sale_merchandise_assignment (
 CREATE TABLE sale_album_assignment (
 
     album_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
-    album_id BIGINT,
-    sale_id BIGINT,
+    album_id BIGINT NOT NULL,
+    sale_id BIGINT NOT NULL,
     PRIMARY KEY (album_assignment_id),
     FOREIGN KEY (album_id) REFERENCES album (album_id),
     FOREIGN key (sale_id) REFERENCES sale (sale_id)
@@ -99,8 +99,8 @@ CREATE TABLE sale_album_assignment (
 CREATE TABLE sale_track_assignment (
 
     track_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
-    track_id BIGINT,
-    sale_id BIGINT,
+    track_id BIGINT NOT NULL,
+    sale_id BIGINT NOT NULL,
     PRIMARY KEY (track_assignment_id),
     FOREIGN KEY (track_id) REFERENCES track (track_id),
     FOREIGN key (sale_id) REFERENCES sale (sale_id)
@@ -112,8 +112,8 @@ CREATE TABLE sale_track_assignment (
 CREATE TABLE artist_merchandise_assignment (
 
     artist_merchandise_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
-    artist_id BIGINT,
-    merchandise_id BIGINT,
+    artist_id BIGINT NOT NULL,
+    merchandise_id BIGINT NOT NULL,
     PRIMARY KEY (artist_merchandise_assignment_id),
     FOREIGN KEY (artist_id) REFERENCES artist (artist_id),
     FOREIGN KEY (merchandise_id) REFERENCES merchandise (merchandise_id)
@@ -123,8 +123,8 @@ CREATE TABLE artist_merchandise_assignment (
 CREATE TABLE artist_album_assignment (
 
     artist_album_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
-    artist_id BIGINT,
-    album_id BIGINT,
+    artist_id BIGINT NOT NULL,
+    album_id BIGINT NOT NULL,
     PRIMARY KEY (artist_album_assignment_id),
     FOREIGN KEY (artist_id) REFERENCES artist (artist_id),
     FOREIGN KEY (album_id) REFERENCES album (album_id)
@@ -134,8 +134,8 @@ CREATE TABLE artist_album_assignment (
 CREATE TABLE artist_track_assignment (
 
     artist_track_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
-    artist_id BIGINT,
-    track_id BIGINT,
+    artist_id BIGINT NOT NULL,
+    track_id BIGINT NOT NULL,
     PRIMARY KEY (artist_track_assignment_id),
     FOREIGN KEY (artist_id) REFERENCES artist (artist_id),
     FOREIGN KEY (track_id) REFERENCES track (track_id)
@@ -146,8 +146,8 @@ CREATE TABLE artist_track_assignment (
 
 CREATE TABLE tag_assignment (
     tag_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
-    tag_id BIGINT,
-    track_id BIGINT,
+    tag_id BIGINT NOT NULL,
+    track_id BIGINT NOT NULL,
     PRIMARY KEY (tag_assignment_id),
     FOREIGN KEY (tag_id) REFERENCES tag (tag_id),
     FOREIGN KEY (track_id) REFERENCES track (track_id)
