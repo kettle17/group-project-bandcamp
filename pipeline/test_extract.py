@@ -106,13 +106,7 @@ def test_fetch_api_data_incorrect_data_returned(fake_get_request, incorrect_api_
         fetch_api_data(1749583860)
 
 
-"""export_api_data_to_csv tests
-
-
-def export_api_data_to_csv(api_data: dict, file_path: str) -> bool:
-    Takes the dictionary contents and converts it into a base CSV file.
-Returns true or false based on if the API was able to be saved locally.
-"""
+"""export_api_data_to_csv tests"""
 
 
 def test_export_api_data_to_csv_wrong_type_for_data():
