@@ -6,5 +6,5 @@ import pytest
 import os
 
 
-def test_example_one():
-    assert True
+def test_if_extract_exists():
+    assert os.path.exists('pipeline/extract.py')
