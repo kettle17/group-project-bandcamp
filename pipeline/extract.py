@@ -1,9 +1,12 @@
 """Script for the extract part of the ETL."""
 
+import time
+
 
 def get_api_request(start_date: int, base_api_url: str) -> dict:
     """Function that gets objects from a given API URL call.
     Separated from fetch_api_data to allow mocking."""
+    start_date -= 200  # subtract 200 from current time so report is generated
     pass
 
 
@@ -26,5 +29,12 @@ def run_extract(start_date: int, file_path: str,
     pass
 
 
+def get_time_offset(curr_time: int = int(time.time()), offset: int = 200) -> int:
+    """Get current time in epoch format, minus time offset"""
+    return curr_time - offset
+
+
 if __name__ == "__main__":
-    run_extract()
+    print(get_time_offset())
+
+    # run_extract()
