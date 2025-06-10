@@ -4,7 +4,7 @@
 
 import pytest
 import os
-from extract import get_api_request, fetch_api_data, save_api_data, run_extract, get_time_offset
+from extract import get_api_request, fetch_api_data, export_api_data_to_csv, run_extract, get_time_offset
 
 
 def test_if_extract_exists():
