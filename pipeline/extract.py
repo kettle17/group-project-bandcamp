@@ -18,7 +18,7 @@ def fetch_api_data(start_date: int, base_api_url: str) -> dict:
     pass
 
 
-def save_api_data(api_data: dict, file_path: str) -> bool:
+def export_api_data_to_csv(api_data: dict, file_path: str) -> bool:
     """Takes the dictionary contents and converts it into a base CSV file.
     Returns true or false based on if the API was able to be saved locally."""
     pass
@@ -27,12 +27,12 @@ def save_api_data(api_data: dict, file_path: str) -> bool:
 def run_extract(file_path: str,
                 curr_time: int = int(time.time()),
                 base_api_url: str = "https://bandcamp.com/api/salesfeed/1/get?start_date="):
-    """Runs all of the script's contents together."""
+    """Runs all required extract functions in succession for the ETL pipeline."""
     pass
 
 
 def get_time_offset(curr_time: int = int(time.time()), offset: int = 200) -> int:
-    """Get current time in epoch format, minus time offset."""
+    """Returns current time in epoch format, minus time offset."""
     return curr_time - offset
 
 
