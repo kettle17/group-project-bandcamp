@@ -1,9 +1,7 @@
 """Script for the transform part of the ETL."""
+# pylint: disable = unnecessary-pass, unused-argument
+
 import pandas as pd
-
-
-def clean_dataframe_from_csv(file_path: str) -> pd.DataFrame:
-    pass
 
 
 def get_required_columns(df: pd.DataFrame) -> pd.DataFrame:
