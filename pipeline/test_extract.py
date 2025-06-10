@@ -10,9 +10,9 @@ from extract import get_api_request, fetch_api_data, export_api_data_to_csv, run
 def test_if_extract_exists():
     """Basic beginner test. If this test can't run, neither can the rest."""
     try:
-        assert os.path.exists('pipeline/extract.py')  # ci/cd root
+        assert os.path.exists('pipeline/extract.py')
     except:
-        assert os.path.exists('extract.py')  # running in terminal
+        assert os.path.exists('extract.py')
 
 
 def test_offset_5000():
