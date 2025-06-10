@@ -38,7 +38,7 @@ CREATE TABLE merchandise (
     merchandise_id BIGINT GENERATED ALWAYS AS IDENTITY,
     art_url VARCHAR(255) NOT NULL,
     url VARCHAR(255) NOT NULL,
-    price_at_point_of_sale DECIMAL NOT NULL,
+    sold_for DECIMAL NOT NULL,
     PRIMARY KEY (merchandise_id)
 );
 
@@ -48,7 +48,7 @@ CREATE TABLE album (
     release_date DATE NOT NULL,
     art_url VARCHAR(255),
     url VARCHAR(255),
-    price_at_point_of_sale DECIMAL NOT NULL,
+    sold_for DECIMAL NOT NULL,
     PRIMARY KEY (album_id)
 );
 
@@ -58,7 +58,7 @@ CREATE TABLE track (
     release_date DATE NOT NULL,
     art_url VARCHAR(255),
     url VARCHAR(255),
-    price_at_point_of_sale DECIMAL NOT NULL,
+    sold_for DECIMAL NOT NULL,
     PRIMARY KEY (track_id)
 );
 
