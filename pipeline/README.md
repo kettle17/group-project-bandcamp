@@ -7,3 +7,5 @@ We will also use a web scraper to gain additional data such as tag data and rele
 
 - `extract.py`  
   Write here...
+- `load.py`
+  A script used to load transformed data into the database.
