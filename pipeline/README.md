@@ -6,4 +6,4 @@ We will also use a web scraper to gain additional data such as tag data and rele
 ## 📁 File Structure
 
 - `extract.py`  
-  Write here...
+  A script that is used to extract API data from BandCamp's undocumented sales API and save it to a csv. 
