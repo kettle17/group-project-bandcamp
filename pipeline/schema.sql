@@ -1,6 +1,7 @@
 -- This file contains all SQL commands to create the tables and relationships for the tracktion database.
 
-DROP TABLE IF EXISTS tag_assignment;
+DROP TABLE IF EXISTS album_tag_assignment;
+DROP TABLE IF EXISTS track_tag_assignment;
 DROP TABLE IF EXISTS artist_merchandise_assignment;
 DROP TABLE IF EXISTS artist_album_assignment;
 DROP TABLE IF EXISTS artist_track_assignment;
@@ -14,8 +15,6 @@ DROP TABLE IF EXISTS sale;
 DROP TABLE IF EXISTS artist;
 DROP TABLE IF EXISTS tag;
 DROP TABLE IF EXISTS country;
-
-DROP TABLE IF EXISTS tag_assignment;
 
 CREATE TABLE country (
     country_id SMALLINT GENERATED ALWAYS AS IDENTITY,
@@ -142,13 +141,22 @@ CREATE TABLE artist_track_assignment (
 );
 
 
--- Tag Assignment table
+-- Tag Assignment tables
 
-CREATE TABLE tag_assignment (
+CREATE TABLE track_tag_assignment (
     tag_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
     tag_id BIGINT NOT NULL,
     track_id BIGINT NOT NULL,
     PRIMARY KEY (tag_assignment_id),
     FOREIGN KEY (tag_id) REFERENCES tag (tag_id),
     FOREIGN KEY (track_id) REFERENCES track (track_id)
+);
+
+CREATE TABLE album_tag_assignment (
+    tag_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
+    tag_id BIGINT NOT NULL,
+    album_id BIGINT NOT NULL,
+    PRIMARY KEY (tag_assignment_id),
+    FOREIGN KEY (tag_id) REFERENCES tag (tag_id),
+    FOREIGN KEY (album_id) REFERENCES album (album_id)
 );
