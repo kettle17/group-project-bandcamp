@@ -7,4 +7,4 @@ import os
 
 
 def test_if_extract_exists():
-    assert os.path.exists('extract.py')
+    assert os.path.exists('pipeline/extract.py')
