@@ -97,3 +97,6 @@ pycache/*
 *.pem
 *.pemkey
 .env
+
+.csv
+.parquet
