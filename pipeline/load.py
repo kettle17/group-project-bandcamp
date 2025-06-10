@@ -5,7 +5,7 @@ import psycopg2
 from psycopg2.extensions import connection
 
 
-def get_db_connection():
+def get_db_connection() -> connection:
     """Returns a database connection established using .env credentials."""
 
 
