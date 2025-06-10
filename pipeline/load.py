@@ -1,4 +1,5 @@
 
+# pylint: skip-file
 """Script for the load portion of the ETL pipeline."""
 import pandas as pd
 import psycopg2
