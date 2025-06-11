@@ -80,7 +80,7 @@ def test_upload_to_db_handles_empty_dataframe(mock_connect) -> None:
 
 @patch("load.psycopg2.connect")
 def test_upload_to_db_handles_database_error(mock_connect) -> None:
-    """Test that upload_to_db handles database insertion errors gracefully."""
+    """Test that upload_to_db raises DatabaseError when database insertion fails."""
     df = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
 
     mock_conn = MagicMock()
