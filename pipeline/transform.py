@@ -34,6 +34,11 @@ def filter_by_currency(df: pd.DataFrame, accepted: list = ["USD", "GBP", "EUR"])
     pass
 
 
+def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """Combines all of the previous functions into one."""
+    pass
+
+
 def export_dataframe(df: pd.DataFrame, output_path: str = "data/clean_sales.csv") -> None:
     """Exports the cleaned DataFrame to a CSV file."""
     pass
