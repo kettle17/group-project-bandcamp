@@ -1,11 +1,12 @@
-# pylint: skip-file
 """Script for the extract part of the ETL."""
 
 import time
-import requests
 import csv
 import os
 from datetime import datetime
+
+import requests
+
 from utilities import get_logger, set_logger
 
 
