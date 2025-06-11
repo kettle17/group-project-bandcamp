@@ -1,6 +1,8 @@
 # pylint: skip-file
 """Test file for the load pipeline."""
 import pytest
+import psycopg2
+from psycopg2.extensions import connection as psycopg2_connection
 from unittest.mock import patch
 from load import (
     get_db_connection,
@@ -10,19 +12,37 @@ from load import (
 )
 
 
-def test_get_db_connection_returns_connection() -> None:
+@patch("load.psycopg2.connect")
+def test_get_db_connection_returns_connection(mock_connect) -> None:
     """Test that get_db_connection returns a valid psycopg2 connection object."""
-    pass
+    mock_conn = mock_connect.return_value
+    conn = get_db_connection()
+    assert conn is mock_conn
 
 
-def test_get_db_connection_uses_env_variables() -> None:
+@patch("load.psycopg2.connect")
+@patch.dict("os.environ", {
+    "DB_HOST": "testlocalhost",
+    "DB_NAME": "testdb",
+    "DB_USER": "testuser",
+    "DB_PASSWORD": "veryrealpassword"
+})
+def test_get_db_connection_uses_env_variables(mock_connect) -> None:
     """Test that get_db_connection uses environment variables for credentials."""
-    pass
+    get_db_connection()
+    mock_connect.assert_called_once_with(
+        host="testlocalhost",
+        dbname="testdb",
+        user="testuser",
+        password="veryrealpassword"
+    )
 
 
-def test_get_db_connection_calls_psycopg2_connect() -> None:
+@patch("load.psycopg2.connect")
+def test_get_db_connection_calls_psycopg2_connect(mock_connect) -> None:
     """Test that get_db_connection calls psycopg2.connect method."""
-    pass
+    conn = get_db_connection()
+    mock_connect.assert_called_once()
 
 
 def test_upload_to_db_handles_invalid_data_type() -> None:
