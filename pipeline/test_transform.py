@@ -1,5 +1,4 @@
 # pylint: skip-file
-
 """Test file for the transform pipeline."""
 
 from transform import clean_dataframe_from_csv, get_required_columns, check_valid_sale, clean_urls
