@@ -39,8 +39,13 @@ def validate_foreign_keys(df: pd.DataFrame) -> bool:
     pass
 
 
-def get_id_mapping(df: pd.DataFrame) -> pd.DataFrame:
-    """Adds ID mapping to each foreign key on separate columns."""
+def get_id_mapping(df: pd.DataFrame, table_name: str) -> dict:
+    """Returns a dictionary of foriegn key mappings."""
+    pass
+
+
+def add_foreign_key_column(df: pd.DataFrame) -> pd.DataFrame:
+    """Returns a pandas dataframe containing foreign key columns."""
     pass
 
 
