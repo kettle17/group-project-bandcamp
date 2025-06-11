@@ -31,28 +31,55 @@ def example_api_call():
         "events": [
             {
                 "event_type": "sale",
-                "utc_date": 1749583861.5860023,
+                "utc_date": 1749638281.9409266,
                 "items": [
                     {
-                        "utc_date": 1749583861.7284331,
-                        "artist_name": "nanobii",
+                        "utc_date": 1749638281.672574,
+                        "artist_name": "Andrew Applepie",
                         "item_type": "t",
-                        "item_description": "F**K (Extended Mix)",
-                        "album_title": "F**K",
+                        "item_description": "When The World Goes Down",
+                        "album_title": "A Couple Of Pop Songs",
                         "slug_type": "t",
                         "track_album_slug_text": None,
-                        "currency": "SEK",
-                        "amount_paid": 8,
-                        "item_price": 8,
-                        "amount_paid_usd": 0.83,
-                        "country": "United States",
-                        "art_id": 34096151,
+                        "currency": "EUR",
+                        "amount_paid": 1,
+                        "item_price": 1,
+                        "amount_paid_usd": 1.14,
+                        "country": "Japan",
+                        "art_id": 2194995336,
                         "releases": None,
                         "package_image_id": None,
-                        "url": "//nanobii.bandcamp.com/track/f-k-extended-mix",
-                        "country_code": "us",
-                        "amount_paid_fmt": "8 SEK",
-                        "art_url": "https://f4.bcbits.com/img/a0034096151_7.jpg"
+                        "url": "//andrewapplepie.bandcamp.com/track/when-the-world-goes-down",
+                        "country_code": "jp",
+                        "amount_paid_fmt": "€1",
+                        "art_url": "https://f4.bcbits.com/img/a2194995336_7.jpg"
+                    }
+                ]
+            },
+            {
+                "event_type": "sale",
+                "utc_date": 1749638295.33538,
+                "items": [
+                    {
+                        "utc_date": 1749638295.4456537,
+                        "artist_name": "Ella Zirina",
+                        "item_type": "a",
+                        "item_description": "Boundless Blue, Sunset Hue",
+                        "album_title": None,
+                        "slug_type": "a",
+                        "track_album_slug_text": None,
+                        "currency": "EUR",
+                        "amount_paid": 7,
+                        "item_price": 7,
+                        "amount_paid_usd": 8,
+                        "country": "Japan",
+                        "art_id": 3672109546,
+                        "releases": None,
+                        "package_image_id": None,
+                        "url": "//ellazirina.bandcamp.com/album/boundless-blue-sunset-hue",
+                        "country_code": "jp",
+                        "amount_paid_fmt": "€7",
+                        "art_url": "https://f4.bcbits.com/img/a3672109546_7.jpg"
                     }
                 ]
             }

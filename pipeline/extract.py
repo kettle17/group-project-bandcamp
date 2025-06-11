@@ -45,18 +45,32 @@ def export_api_data_to_csv(api_data: dict, file_path: str) -> bool:
         raise ValueError("Path does not end in .csv.")
     if not api_data.get('start_date'):
         raise ValueError("API data did not return correctly.")
+    if not api_data.get('events'):
+        raise ValueError("API data did not return correctly.")
 
     # current_directory = os.getcwd()
 
     # logger.info("Saving BandCamp API data to %s...", file_path)
+    api_items = api_data['events'][0]['items']
+    """Events comprise main API data
+    For each event, we need to access 'items'
+    and then output this to the csv per row"""
+
+    logger.info("Updating data keys.")
+    all_keys = set()
+    for api_item in api_items:
+        print(api_item.keys())
+        all_keys.update(api_item.keys())
+    keys = sorted(all_keys)
 
     try:
         with open(file_path, 'w', newline='', encoding='utf-8') as output_file:
-            dict_writer = csv.DictWriter(output_file)
+            dict_writer = csv.DictWriter(output_file, keys)
             dict_writer.writeheader()
-            dict_writer.writerows(api_data)
+            dict_writer.writerows(api_items)
         logger.info("Successfully wrote data to %s!", file_path)
     except Exception as exc:
+        print(exc)
         return False
     return True
 
