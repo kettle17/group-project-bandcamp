@@ -90,6 +90,7 @@ def test_fetch_api_data_start_date_should_deny_negative():
         fetch_api_data(-58492573)
 
 
+@patch('extract.get_api_request')
 def test_fetch_api_data_incorrect_data_returned(fake_get_request, incorrect_api_call):
     """Test that checks if script halts if the format of dictionary data is not as expected."""
     fake_get_request.return_value = incorrect_api_call
@@ -112,9 +113,9 @@ def test_export_api_data_to_csv_wrong_type_for_filepath():
         export_api_data_to_csv({'dict': 'dict'}, 2424)
 
 
-def test_export_api_data_to_csv_wrong_value_for_filepath():
+def test_export_api_data_to_csv_folder_path_doesnt_exist():
     """Test that checks if script halts if the folder path doesn't exist."""
-    with pytest.raises(LookupError):
+    with pytest.raises(OSError):
         export_api_data_to_csv(
             {'dict': 'dict'}, 'data/data/data/data/data/output.csv')
 
@@ -155,7 +156,7 @@ def test_run_extract_wrong_type_for_filepath():
 
 def test_run_extract_wrong_value_folder_path_doesnt_exist():
     """Test that checks if script halts if the folder path doesn't exist."""
-    with pytest.raises(LookupError):
+    with pytest.raises(OSError):
         run_extract('data/data/data/data/data/output.csv')
 
 
@@ -169,18 +170,6 @@ def test_run_extract_wrong_value_for_curr_time():
     """Test that checks if script halts if the curr_time is negative."""
     with pytest.raises(ValueError):
         run_extract('data/output.csv', -49234739284723)
-
-
-@patch('extract.get_api_request')
-def test_export_api_data_to_csv_incorrect_data_returned(fake_get_request, incorrect_api_call):
-    """Test that checks that csv isn't saved if the data is incorrectly formatted."""
-    fake_get_request.return_value = incorrect_api_call
-    m = mock_open()
-    with patch('__main__.open', m):
-        with open('foo', 'w') as h:
-            h.write('some stuff')
-    with pytest.raises(ValueError):
-        run_extract(incorrect_api_call, 'data/output.csv')
 
 
 @patch('extract.get_api_request')

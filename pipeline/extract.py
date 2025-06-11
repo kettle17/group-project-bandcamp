@@ -4,6 +4,7 @@
 import time
 import requests
 import csv
+import os
 from utilities import get_logger, set_logger
 
 
@@ -23,8 +24,10 @@ def fetch_api_data(start_date: int) -> dict:
     """Returns data fetched from BandCamp's API.
     Start date is a seconds from epoch int that gets called in the API under start_date.
     This is the report that gets called every 2 minutes."""
-    request = get_api_request(start_date)
-    return request
+    api_data = get_api_request(start_date)
+    if not api_data.get('start_date'):
+        raise ValueError("API data did not return correctly.")
+    return api_data
 
 
 def export_api_data_to_csv(api_data: dict, file_path: str) -> bool:
@@ -36,11 +39,16 @@ def export_api_data_to_csv(api_data: dict, file_path: str) -> bool:
         raise TypeError("File path is not a string.")
     if not isinstance(api_data, dict):
         raise TypeError("Api data is not in the correct format.")
+    if not os.path.isdir(os.path.dirname(file_path)):
+        raise OSError("Folder path doesn't exist.")
+    if file_path[-4:] != '.csv':
+        raise ValueError("Path does not end in .csv.")
+    if not api_data.get('start_date'):
+        raise ValueError("API data did not return correctly.")
 
-    file_name = file_path[file_path.rindex('/')+1:]
-    print(directory_path)
+    # current_directory = os.getcwd()
 
-    logger.info("Saving BandCamp API data to %s...", file_path)
+    # logger.info("Saving BandCamp API data to %s...", file_path)
 
     try:
         with open(file_path, 'w', newline='', encoding='utf-8') as output_file:
