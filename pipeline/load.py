@@ -1,13 +1,23 @@
 
 # pylint: skip-file
 """Script for the load portion of the ETL pipeline."""
+from os import environ as ENV
 import pandas as pd
 import psycopg2
+from dotenv import load_dotenv
 from psycopg2.extensions import connection
 
 
 def get_db_connection() -> connection:
     """Returns a database connection established using .env credentials."""
+    load_dotenv('.env')
+    return psycopg2.connect(
+        user=ENV["DATABASE_USERNAME"],
+        password=ENV["DATABASE_PASSWORD"],
+        host=ENV["DATABASE_IP"],
+        port=ENV["DATABASE_PORT"],
+        database=ENV["DATABASE_NAME"]
+    )
 
 
 def upload_to_db(dataframe: pd.DataFrame, conn: connection) -> None:
@@ -23,4 +33,5 @@ def run_load(dataframe: pd.DataFrame = None, csv_path: str = None) -> None:
 
 
 if __name__ == "__main__":
-    pass
+    conn = get_db_connection()
+    print(conn)

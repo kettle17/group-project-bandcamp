@@ -20,5 +20,9 @@ The data is visualised using Streamlit, a lightweight web app framework chosen f
 ## 🤐 Environment Variable Structure
 The following are the variables required in the .env file with their placeholders:
 ```
-
+DB_USERNAME=your-user-name
+DB_PASSWORD=your-db-password
+DB_HOST=your-db-host-ip
+DB_PORT=your-db-port
+DB_NAME=your-db-name
 ```
