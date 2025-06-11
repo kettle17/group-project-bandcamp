@@ -254,7 +254,7 @@ def test_collect_api_rows_and_columns_correct_data_returned(fake_get_request, ex
              'country_code': 'jp', 'amount_paid_fmt': '€7',
              'art_url': 'https://f4.bcbits.com/img/a3672109546_7.jpg'
              }],
-        ['album_title', 'amount_paid', 'amount_paid_fmt', 'amount_paid_usd',
+        ['addl_count', 'album_title', 'amount_paid', 'amount_paid_fmt', 'amount_paid_usd',
          'art_id', 'art_url', 'artist_name', 'country', 'country_code', 'currency',
          'item_description', 'item_price', 'item_type', 'package_image_id', 'releases',
          'slug_type', 'track_album_slug_text', 'url', 'utc_date'])

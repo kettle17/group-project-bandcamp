@@ -92,6 +92,7 @@ def collect_api_rows_and_columns(api_data: dict) -> tuple:
         for event_item in event['items']:
             item_rows.append(event_item)
             all_keys.update(event_item.keys())
+    all_keys.add('addl_count')  # hardcode very rare column
     keys = sorted(all_keys)
     return (item_rows, keys)
 
