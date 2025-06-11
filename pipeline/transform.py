@@ -19,5 +19,25 @@ def clean_urls(df: pd.DataFrame) -> pd.DataFrame:
     pass
 
 
+def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
+    """Handles or removes rows with missing essential fields."""
+    pass
+
+
+def group_sales_by(df: pd.DataFrame, group_by: str = "date") -> pd.DataFrame:
+    """Aggregates total revenue and sales by specified field."""
+    pass
+
+
+def filter_by_currency(df: pd.DataFrame, accepted: list = ["USD", "GBP", "EUR"]) -> pd.DataFrame:
+    """Filters rows based on accepted currency types."""
+    pass
+
+
+def export_dataframe(df: pd.DataFrame, output_path: str = "data/clean_sales.csv") -> None:
+    """Exports the cleaned DataFrame to a CSV file."""
+    pass
+
+
 if __name__ == "__main__":
     pass
