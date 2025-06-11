@@ -13,13 +13,13 @@ pytest.skip(allow_module_level=True)
 
 
 def test_get_api_request_start_date_invalid_type():
-    """Check if start_date is a valid int."""
+    """Test that checks if start_date is a valid int."""
     with pytest.raises(TypeError):
         get_api_request('I am not an int')
 
 
 def test_get_api_request_start_date_should_deny_negative():
-    """Check if start_date accepts negative values."""
+    """Test that checks if start_date accepts negative values."""
     with pytest.raises(ValueError):
         get_api_request(-58492573)
 
