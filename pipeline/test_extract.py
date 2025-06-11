@@ -9,7 +9,8 @@ from unittest.mock import patch, mock_open
 from extract import (
     get_api_request,
     fetch_api_data,
-    api_data_to_rows_and_columns,
+    validate_api_data,
+    collect_api_rows_and_columns,
     save_to_csv,
     run_extract,
     get_time_offset
@@ -149,44 +150,44 @@ def test_fetch_api_data_incorrect_data_returned(fake_get_request, incorrect_api_
         fetch_api_data(1749583860)
 
 
-"""export_api_data_to_csv tests"""
+"""validate_api_data tests"""
 
 
-def test_api_data_to_rows_and_columns_wrong_type_for_data():
+def test_validate_api_data_wrong_type_for_data():
     """Test that checks if script halts if the data type is not a dict."""
     with pytest.raises(TypeError):
-        api_data_to_rows_and_columns('I am not a dict', 'filepath')
+        validate_api_data('I am not a dict', 'filepath')
 
 
-def test_api_data_to_rows_and_columns_wrong_type_for_filepath():
+def test_validate_api_data_wrong_type_for_filepath():
     """Test that checks if script halts if the file path isn't a string."""
     with pytest.raises(TypeError):
-        api_data_to_rows_and_columns({'dict': 'dict'}, 2424)
+        validate_api_data({'dict': 'dict'}, 2424)
 
 
-def test_api_data_to_rows_and_columns_folder_path_doesnt_exist():
+def test_validate_api_data_folder_path_doesnt_exist():
     """Test that checks if script halts if the folder path doesn't exist."""
     with pytest.raises(OSError):
-        api_data_to_rows_and_columns(
+        validate_api_data(
             {'dict': 'dict'}, 'data/data/data/data/data/output.csv')
 
 
-def test_api_data_to_rows_and_columns_wrong_value_for_filepath():
+def test_validate_api_data_wrong_value_for_filepath():
     """Test that checks if script halts if the file path doesn't end in csv"""
     with pytest.raises(ValueError):
-        api_data_to_rows_and_columns({'dict': 'dict'}, 'data/output')
+        validate_api_data({'dict': 'dict'}, 'data/output')
 
 
 @patch('extract.get_api_request')
-def test_api_data_to_rows_and_columns_incorrect_data_returned_no_start_date(fake_get_request, incorrect_api_call):
+def test_validate_api_data_incorrect_data_returned_no_start_date(fake_get_request, incorrect_api_call):
     """Test that checks that csv isn't saved if the data is incorrectly formatted (empty request)."""
     fake_get_request.return_value = incorrect_api_call
     with pytest.raises(ValueError):
-        api_data_to_rows_and_columns(incorrect_api_call, 'data/output.csv')
+        validate_api_data(incorrect_api_call, 'data/output.csv')
 
 
 @patch('extract.get_api_request')
-def test_api_data_to_rows_and_columns_incorrect_data_returned_no_events(fake_get_request):
+def test_validate_api_data_incorrect_data_returned_no_events(fake_get_request):
     """Test that checks that csv isn't saved if the data is incorrectly formatted (no events)."""
     fake_get_request.return_value = {
         "start_date": 1749583860,
@@ -196,11 +197,11 @@ def test_api_data_to_rows_and_columns_incorrect_data_returned_no_events(fake_get
     }
     api_data = fake_get_request()
     with pytest.raises(ValueError):
-        api_data_to_rows_and_columns(api_data, 'data/output.csv')
+        validate_api_data(api_data, 'data/output.csv')
 
 
 @patch('extract.get_api_request')
-def test_api_data_to_rows_and_columns_incorrect_data_returned_empty_events(fake_get_request):
+def test_validate_api_data_incorrect_data_returned_empty_events(fake_get_request):
     """Test that checks that csv isn't saved if the data is incorrectly formatted (events is empty)."""
     fake_return = {
         "start_date": 1749583860,
@@ -212,16 +213,27 @@ def test_api_data_to_rows_and_columns_incorrect_data_returned_empty_events(fake_
     fake_get_request.return_value = fake_return
     api_data = fake_get_request()
     with pytest.raises(ValueError):
-        api_data_to_rows_and_columns(api_data, 'data/output.csv')
+        validate_api_data(api_data, 'data/output.csv')
 
 
 @patch('extract.get_api_request')
-def test_api_data_to_rows_and_columns_correct_data_returned(fake_get_request, example_api_call):
-    """Test that checks that csv is saved if the data is correctly formatted."""
+def test_validate_api_data_correct_data_returned(fake_get_request, example_api_call):
+    """Test that checks that csv isn't saved if the data is incorrectly formatted (events is empty)."""
     fake_get_request.return_value = example_api_call
     file_path = 'data/output.csv'
     altered_file_path = os.path.dirname(__file__) + '/' + file_path
-    assert api_data_to_rows_and_columns(example_api_call, file_path) == (
+    api_data = fake_get_request()
+    assert validate_api_data(api_data, 'data/output.csv') == altered_file_path
+
+
+"""collect_api_rows_and_columns tests """
+
+
+@patch('extract.get_api_request')
+def test_collect_api_rows_and_columns_correct_data_returned(fake_get_request, example_api_call):
+    """Test that checks that csv is saved if the data is correctly formatted."""
+    fake_get_request.return_value = example_api_call
+    assert collect_api_rows_and_columns(example_api_call) == (
         [
             {'utc_date': 1749638281.672574, 'artist_name': 'Andrew Applepie',
              'item_type': 't', 'item_description': 'When The World Goes Down',
@@ -245,8 +257,7 @@ def test_api_data_to_rows_and_columns_correct_data_returned(fake_get_request, ex
         ['album_title', 'amount_paid', 'amount_paid_fmt', 'amount_paid_usd',
          'art_id', 'art_url', 'artist_name', 'country', 'country_code', 'currency',
          'item_description', 'item_price', 'item_type', 'package_image_id', 'releases',
-         'slug_type', 'track_album_slug_text', 'url', 'utc_date'],
-        altered_file_path)
+         'slug_type', 'track_album_slug_text', 'url', 'utc_date'])
 
 
 """run_extract tests"""

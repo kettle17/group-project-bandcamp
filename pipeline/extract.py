@@ -46,14 +46,13 @@ def fetch_api_data(start_date: int) -> dict:
     return api_data
 
 
-def api_data_to_rows_and_columns(api_data: dict, file_path: str) -> tuple:
-    """Takes the API contents and readies them to be saved to csv.
-    Returns a tuple containing:
-      a list of all API items to be inserted into the csv
-      a list of all column keys that appeared during iteration."""
+def validate_api_data(api_data: dict, file_path: str) -> str:
+    """Validates API contents to make sure format is correct.
+    Will execute with no issues if the format fulfills all validation conditions.
+    Returns modified file path based on script directory."""
     logger = get_logger()
 
-    logger.info("Checking API data...")
+    logger.info("Validating API data...")
 
     if not isinstance(file_path, str):
         logger.critical("File path is not a string.")
@@ -62,22 +61,31 @@ def api_data_to_rows_and_columns(api_data: dict, file_path: str) -> tuple:
         logger.critical("Api data is not in the correct format.")
         raise TypeError("Api data is not in the correct format.")
 
-    file_path = os.path.dirname(__file__) + '/' + file_path
+    new_file_path = os.path.dirname(__file__) + '/' + file_path
 
     if not os.path.isdir(os.path.dirname(file_path)):
         logger.critical("Folder path doesn't exist.")
         raise OSError("Folder path doesn't exist.")
-    if file_path[-4:] != '.csv':
+    if new_file_path[-4:] != '.csv':
         logger.critical("Path does not end in .csv.")
         raise ValueError("Path does not end in .csv.")
     if (not api_data.get('start_date') or not api_data.get('events')
             or not any(api_data['events'])):
         logger.critical("API data did not return correctly.")
         raise ValueError("API data did not return correctly.")
+    logger.info("API data validated with no issues found!")
+    return new_file_path
 
+
+def collect_api_rows_and_columns(api_data: dict) -> tuple:
+    """Takes the API contents and readies them to be saved to csv.
+    Returns a tuple containing:
+      a list of all API items to be inserted into the csv
+      a list of all column keys that appeared during iteration."""
+    logger = get_logger()
+    logger.info("Collecting API contents...")
     item_rows = []
     api_events = api_data['events']
-
     logger.info("Grabbing columns...")
     all_keys = set()
     for event in api_events:
@@ -85,8 +93,7 @@ def api_data_to_rows_and_columns(api_data: dict, file_path: str) -> tuple:
             item_rows.append(event_item)
             all_keys.update(event_item.keys())
     keys = sorted(all_keys)
-
-    return (item_rows, keys, file_path)
+    return (item_rows, keys)
 
 
 def save_to_csv(api_data: dict, keys: list, file_path: str) -> bool:
@@ -114,9 +121,9 @@ def run_extract(file_path: str,
                 curr_time: int = int(time.time())) -> bool:
     """Runs all required extract functions in succession for the ETL pipeline."""
     api_data = fetch_api_data(curr_time)
-    api_rows, api_columns, validated_file_path = api_data_to_rows_and_columns(
-        api_data, file_path)
-    return save_to_csv(api_rows, api_columns, validated_file_path)
+    directory_file_path = validate_api_data(api_data, file_path)
+    api_rows, api_columns = collect_api_rows_and_columns(api_data)
+    return save_to_csv(api_rows, api_columns, directory_file_path)
 
 
 def get_time_offset(curr_time: int = int(time.time()), offset: int = 200) -> int:
