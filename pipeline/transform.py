@@ -34,8 +34,8 @@ def filter_by_currency(df: pd.DataFrame, accepted: list = ["USD", "GBP", "EUR"])
     pass
 
 
-def validate_forein_keys(df: pd.DataFrame) -> bool:
-    """Checks if a forein key already exists before mapping it to a new id."""
+def validate_foreign_keys(df: pd.DataFrame) -> bool:
+    """Checks if a foreign key already exists before mapping it to a new id."""
     pass
 
 
