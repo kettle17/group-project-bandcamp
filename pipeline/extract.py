@@ -2,33 +2,62 @@
 """Script for the extract part of the ETL."""
 
 import time
+import requests
+import csv
+from utilities import get_logger, set_logger
 
 
-def get_api_request(start_date: int, base_api_url: str) -> dict:
+def get_api_request(start_date: int,
+                    bandcamp_url: str = "https://bandcamp.com/api/salesfeed/1/get?start_date=") -> dict:
     """Returns objects from a given API URL call.
     Separated from fetch_api_data to allow mocking."""
-    start_date -= 200  # subtract 200 from current time so report is generated
-    pass
+    if start_date < 0:
+        raise ValueError("start_date is a negative value. Halting.")
+    bandcamp_url += str(get_time_offset(start_date))
+
+    response = requests.get(bandcamp_url, timeout=10)
+    return response.json()
 
 
-def fetch_api_data(start_date: int, base_api_url: str) -> dict:
+def fetch_api_data(start_date: int) -> dict:
     """Returns data fetched from BandCamp's API.
     Start date is a seconds from epoch int that gets called in the API under start_date.
     This is the report that gets called every 2 minutes."""
-    pass
+    request = get_api_request(start_date)
+    return request
 
 
 def export_api_data_to_csv(api_data: dict, file_path: str) -> bool:
     """Takes the dictionary contents and converts it into a base CSV file.
     Returns true or false based on if the API was able to be saved locally."""
-    pass
+    logger = get_logger()
+
+    if not isinstance(file_path, str):
+        raise TypeError("File path is not a string.")
+    if not isinstance(api_data, dict):
+        raise TypeError("Api data is not in the correct format.")
+
+    file_name = file_path[file_path.rindex('/')+1:]
+    print(directory_path)
+
+    logger.info("Saving BandCamp API data to %s...", file_path)
+
+    try:
+        with open(file_path, 'w', newline='', encoding='utf-8') as output_file:
+            dict_writer = csv.DictWriter(output_file)
+            dict_writer.writeheader()
+            dict_writer.writerows(api_data)
+        logger.info("Successfully wrote data to %s!", file_path)
+    except Exception as exc:
+        return False
+    return True
 
 
 def run_extract(file_path: str,
-                curr_time: int = int(time.time()),
-                base_api_url: str = "https://bandcamp.com/api/salesfeed/1/get?start_date="):
+                curr_time: int = int(time.time())) -> bool:
     """Runs all required extract functions in succession for the ETL pipeline."""
-    pass
+    api_data = fetch_api_data(curr_time)
+    return export_api_data_to_csv(api_data, file_path)
 
 
 def get_time_offset(curr_time: int = int(time.time()), offset: int = 200) -> int:
@@ -37,4 +66,4 @@ def get_time_offset(curr_time: int = int(time.time()), offset: int = 200) -> int
 
 
 if __name__ == "__main__":
-    run_extract('')
+    run_extract('data/output.csv')
