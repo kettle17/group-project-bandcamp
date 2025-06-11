@@ -14,7 +14,7 @@ def upload_to_db(dataframe: pd.DataFrame, conn: connection) -> None:
     """Uploads a pandas dataframe to a database."""
 
 
-def export_to_csv(dataframe: pd.DataFrame) -> None:
+def export_to_csv(dataframe: pd.DataFrame, output_path: str = "output.txt") -> None:
     """Exports a dataframe as a csv."""
 
 

@@ -2,8 +2,9 @@
 """Test file for the load pipeline."""
 import pytest
 import psycopg2
+import pandas as pd
 from psycopg2.extensions import connection as psycopg2_connection
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from load import (
     get_db_connection,
     upload_to_db,
@@ -45,29 +46,78 @@ def test_get_db_connection_calls_psycopg2_connect(mock_connect) -> None:
     mock_connect.assert_called_once()
 
 
-def test_upload_to_db_handles_invalid_data_type() -> None:
-    """Test that upload_to_db raises appropriate error for invalid data types."""
-    pass
+@patch("load.psycopg2.connect")
+def test_upload_to_db_handles_invalid_data_type_df(mock_connect) -> None:
+    """Test that upload_to_db raises TypeError for invalid DataFrame input."""
+    mock_conn = mock_connect.return_value
+    with pytest.raises(TypeError):
+        upload_to_db(12345, mock_conn)
 
 
-def test_upload_to_db_handles_empty_dataframe() -> None:
-    """Test that upload_to_db handles empty dataframes appropriately."""
-    pass
+def test_upload_to_db_handles_invalid_data_type_connection() -> None:
+    """Test that upload_to_db raises TypeError for invalid DataFrame input."""
+    df = pd.DataFrame({"test_df": [1, 2, 3]})
+    with pytest.raises(TypeError):
+        upload_to_db(df, 12345)
 
 
-def test_upload_to_db_handles_database_error() -> None:
+@patch("load.psycopg2.connect")
+def test_upload_to_db_handles_empty_dataframe(mock_connect) -> None:
+    """Test that upload_to_db handles empty DataFrame gracefully."""
+    mock_conn = mock_connect.return_value
+    df = pd.DataFrame()
+
+    upload_to_db(df, mock_conn)
+
+    mock_conn.cursor().execute.assert_not_called()
+
+
+@patch("load.psycopg2.connect")
+def test_upload_to_db_handles_database_error(mock_connect) -> None:
     """Test that upload_to_db handles database insertion errors gracefully."""
-    pass
+    df = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
+
+    mock_conn = MagicMock()
+    mock_cursor = mock_conn.cursor.return_value
+    mock_cursor.execute.side_effect = psycopg2.DatabaseError(
+        "DB insertion failed")
+
+    mock_connect.return_value = mock_conn
+
+    with pytest.raises(psycopg2.DatabaseError):
+        upload_to_db(df, mock_conn)
 
 
-def test_export_to_csv_handles_empty_dataframe() -> None:
-    """Test that export_to_csv handles empty dataframes without errors."""
-    pass
+@patch("load.pd.DataFrame.to_csv")
+@patch("load.psycopg2.connect")
+def test_export_to_csv_handles_empty_dataframe(mock_connect, mock_to_csv) -> None:
+    """Test that export_to_csv handles empty DataFrames without calling to_csv."""
+    mock_conn = mock_connect.return_value
+    df = pd.DataFrame()
+
+    export_to_csv(df)
+
+    mock_to_csv.assert_not_called()
 
 
-def test_export_to_csv_calls_to_csv_method() -> None:
+@patch("load.pd.DataFrame.to_csv")
+def test_export_to_csv_calls_to_csv_method(mock_to_csv) -> None:
     """Test that export_to_csv calls DataFrame.to_csv method."""
-    pass
+    df = pd.DataFrame({"col1": [1, 2, 3]})
+
+    export_to_csv(df)
+
+    mock_to_csv.assert_called_once_with("output.csv", index=False)
+
+
+@patch("load.pd.DataFrame.to_csv")
+def test_export_to_csv_uses_custom_output_path(mock_to_csv) -> None:
+    """Test that export_to_csv uses custom path when provided."""
+    df = pd.DataFrame({"col1": [1, 2, 3]})
+
+    export_to_csv(df, "custom.csv")
+
+    mock_to_csv.assert_called_once_with("custom.csv", index=False)
 
 
 def test_run_load_handles_missing_file() -> None:
