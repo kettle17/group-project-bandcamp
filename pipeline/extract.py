@@ -48,27 +48,31 @@ def export_api_data_to_csv(api_data: dict, file_path: str) -> bool:
     if not api_data.get('events'):
         raise ValueError("API data did not return correctly.")
 
-    # current_directory = os.getcwd()
-
-    # logger.info("Saving BandCamp API data to %s...", file_path)
-    api_items = api_data['events'][0]['items']
+    list_of_items = []
+    api_events = api_data['events']
     """Events comprise main API data
     For each event, we need to access 'items'
     and then output this to the csv per row"""
-
-    logger.info("Updating data keys.")
     all_keys = set()
-    for api_item in api_items:
-        print(api_item.keys())
-        all_keys.update(api_item.keys())
+    for event in api_events:
+        for event_item in event['items']:
+            list_of_items.append(event_item)
+            all_keys.update(event_item.keys())
     keys = sorted(all_keys)
+    logger.info("Updating data keys.")
 
+    return save_to_csv(list_of_items, keys, file_path)
+
+
+def save_to_csv(api_data: dict, keys: list, file_path: str) -> bool:
+    """Creates a .csv file and writes the contents of the fetched API data
+    to the file.
+    Separated from export_api_data_to_csv to allow easy mocking."""
     try:
         with open(file_path, 'w', newline='', encoding='utf-8') as output_file:
             dict_writer = csv.DictWriter(output_file, keys)
             dict_writer.writeheader()
-            dict_writer.writerows(api_items)
-        logger.info("Successfully wrote data to %s!", file_path)
+            dict_writer.writerows(api_data)
     except Exception as exc:
         print(exc)
         return False

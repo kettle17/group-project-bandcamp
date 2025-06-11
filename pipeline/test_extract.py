@@ -162,13 +162,11 @@ def test_export_api_data_to_csv_incorrect_data_returned(fake_get_request, incorr
 
 
 @patch('extract.get_api_request')
-def test_export_api_data_to_csv_correct_data_returned(fake_get_request, example_api_call):
+@patch('extract.save_to_csv')
+def test_export_api_data_to_csv_correct_data_returned(fake_save_to_csv, fake_get_request, example_api_call):
     """Test that checks that csv is saved if the data is correctly formatted."""
     fake_get_request.return_value = example_api_call
-    m = mock_open()
-    with patch('__main__.open', m):
-        with open('foo', 'w') as h:
-            h.write('some stuff')
+    fake_save_to_csv.return_value = True
     assert export_api_data_to_csv(example_api_call, 'data/output.csv')
 
 
@@ -203,22 +201,16 @@ def test_run_extract_wrong_value_for_curr_time():
 def test_run_extract_incorrect_data_returned(fake_get_request, incorrect_api_call):
     """Test that checks that csv isn't saved if the data is incorrectly formatted."""
     fake_get_request.return_value = incorrect_api_call
-    m = mock_open()
-    with patch('__main__.open', m):
-        with open('foo', 'w') as h:
-            h.write('some stuff')
     with pytest.raises(ValueError):
         run_extract('data/output.csv', 1749583860242424)
 
 
 @patch('extract.get_api_request')
-def test_run_extract_correct_data_returned(fake_get_request, example_api_call):
+@patch('extract.save_to_csv')
+def test_run_extract_correct_data_returned(fake_save_to_csv, fake_get_request, example_api_call):
     """Test that checks that csv is saved if the data is correctly formatted."""
     fake_get_request.return_value = example_api_call
-    m = mock_open()
-    with patch('__main__.open', m):
-        with open('foo', 'w') as h:
-            h.write('some stuff')
+    fake_save_to_csv.return_value = True
     assert run_extract('data/output.csv', 2380921482190481)
 
 
