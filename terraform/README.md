@@ -13,6 +13,26 @@ terraform/
 ├── terraform.tfvars  # User-defined values for the variables (should be created manually)
 └── README.md         # This file
 ```
+---
+
+## 🔧 Prerequisites
+
+**Important**: This Terraform configuration requires existing VPC and subnet infrastructure. You will need:
+
+- An existing VPC in your AWS account.
+- At least 2 subnets in different Availability Zones within that VPC (required for RDS subnet groups).
+
+### Creating VPC Infrastructure
+If you don't have existing VPC infrastructure, you can create it using:
+
+- [AWS VPC Creation Guide](https://docs.aws.amazon.com/vpc/latest/userguide/create-vpc.html)
+- [AWS VPC Terraform module](https://registry.terraform.io/modules/terraform-aws-modules/vpc/aws/latest)
+
+### Finding Your Existing Infrastructure
+To find your VPC and subnet IDs in the AWS Console:
+
+- **VPC ID**: AWS Console → VPC → Your VPCs (format: `vpc-xxxxxxxxx`)
+- **Subnet IDs**: AWS Console → VPC → Subnets (format: `subnet-xxxxxxxxx`)
 
 ---
 
@@ -52,5 +72,5 @@ The following AWS resources are provisioned when terraform is ran successfully:
 
 - **DB Subnet Group**  
   Ensures high availability by deploying the RDS instance across multiple subnets in a VPC.
-  
+
 ---
