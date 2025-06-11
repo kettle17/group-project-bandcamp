@@ -14,6 +14,8 @@ The data is visualised using Streamlit, a lightweight web app framework chosen f
 - `setup.sh`: A Bash script to create a virtual environment and install all dependencies listed in requirements.txt.
 - `requirements.txt`: Text file containing external library names which are required for the project.
 
+## Setting Up the Environment
+- Run the command `source setup.sh` from the project root directory.
 
 ## 🤐 Environment Variable Structure
 The following are the variables required in the .env file with their placeholders:
