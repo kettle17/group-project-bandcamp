@@ -1,10 +1,11 @@
 # pylint: skip-file
 """Test file for the load pipeline."""
+import os
+from unittest.mock import patch, MagicMock
 import pytest
 import psycopg2
 import pandas as pd
 from psycopg2.extensions import connection as psycopg2_connection
-from unittest.mock import patch, MagicMock
 from load import (
     get_db_connection,
     upload_to_db,
@@ -24,15 +25,23 @@ def test_get_db_connection_returns_connection(mock_connect) -> None:
     assert conn is mock_conn
 
 
+@pytest.fixture
+def mock_env_vars():
+    """Fixture providing mock environment variables for database connection."""
+    return {
+        "DB_HOST": "testlocalhost",
+        "DB_NAME": "testdb",
+        "DB_USER": "testuser",
+        "DB_PASSWORD": "veryrealpassword"
+    }
+
+
 @patch("load.psycopg2.connect")
-@patch.dict("os.environ", {
-    "DB_HOST": "testlocalhost",
-    "DB_NAME": "testdb",
-    "DB_USER": "testuser",
-    "DB_PASSWORD": "veryrealpassword"
-})
-def test_get_db_connection_uses_env_variables(mock_connect) -> None:
+@patch.dict("os.environ")
+def test_get_db_connection_uses_env_variables(mock_connect, mock_env_vars) -> None:
     """Test that get_db_connection uses environment variables for credentials."""
+    os.environ.update(mock_env_vars)
+
     get_db_connection()
     mock_connect.assert_called_once_with(
         host="testlocalhost",
