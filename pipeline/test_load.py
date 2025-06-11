@@ -90,9 +90,8 @@ def test_upload_to_db_handles_database_error(mock_connect) -> None:
 
 @patch("load.pd.DataFrame.to_csv")
 @patch("load.psycopg2.connect")
-def test_export_to_csv_handles_empty_dataframe(mock_connect, mock_to_csv) -> None:
+def test_export_to_csv_handles_empty_dataframe(mock_to_csv) -> None:
     """Test that export_to_csv handles empty DataFrames without calling to_csv."""
-    mock_conn = mock_connect.return_value
     df = pd.DataFrame()
 
     export_to_csv(df)
@@ -120,21 +119,43 @@ def test_export_to_csv_uses_custom_output_path(mock_to_csv) -> None:
     mock_to_csv.assert_called_once_with("custom.csv", index=False)
 
 
-def test_run_load_handles_missing_file() -> None:
+@patch("load.os.path.exists", return_value=False)
+def test_run_load_handles_missing_file(mock_exists) -> None:
     """Test that run_load handles missing transformed_data.csv file gracefully."""
-    pass
+    with pytest.raises(FileNotFoundError):
+        run_load(csv_path="a_missing_file.csv")
 
 
-def test_run_load_handles_empty_dataframe() -> None:
+@patch("load.get_db_connection")
+@patch("load.upload_to_db")
+def test_run_load_handles_empty_dataframe(mock_upload, mock_get_conn) -> None:
     """Test that run_load handles empty dataframe input appropriately."""
-    pass
+    df = pd.DataFrame()
+    run_load(dataframe=df)
+    mock_upload.assert_not_called()
+    mock_get_conn.assert_not_called()
 
 
 def test_run_load_handles_both_input_types_invalid() -> None:
     """Test that run_load handles case where both dataframe and CSV path are invalid."""
-    pass
+    with pytest.raises(ValueError):
+        run_load()
 
 
-def test_run_load_executes_required_functions() -> None:
+@patch("load.get_db_connection")
+@patch("load.upload_to_db")
+@patch("load.pd.read_csv")
+@patch("load.os.path.exists", return_value=True)
+def test_run_load_executes_required_functions(mock_exists, mock_read_csv, mock_upload, mock_get_conn) -> None:
     """Test that run_load calls all required functions in correct sequence."""
-    pass
+    mock_df = pd.DataFrame({"a": [1, 2]})
+    mock_read_csv.return_value = mock_df
+    mock_conn = MagicMock()
+    mock_get_conn.return_value = mock_conn
+
+    run_load(csv_path="valid.csv")
+
+    mock_exists.assert_called_once_with("valid.csv")
+    mock_read_csv.assert_called_once_with("valid.csv")
+    mock_get_conn.assert_called_once()
+    mock_upload.assert_called_once_with(mock_df, mock_conn)

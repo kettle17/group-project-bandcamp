@@ -18,7 +18,7 @@ def export_to_csv(dataframe: pd.DataFrame, output_path: str = "output.txt") -> N
     """Exports a dataframe as a csv."""
 
 
-def run_load() -> None:
+def run_load(dataframe: pd.DataFrame = None, csv_path: str = None) -> None:
     """Runs the functions required for the load portion of the ETL pipeline in succession."""
 
 
