@@ -30,9 +30,11 @@ def fetch_api_data(start_date: int) -> dict:
     return api_data
 
 
-def export_api_data_to_csv(api_data: dict, file_path: str) -> bool:
-    """Takes the dictionary contents and converts it into a base CSV file.
-    Returns true or false based on if the API was able to be saved locally."""
+def api_data_to_rows_and_columns(api_data: dict, file_path: str) -> tuple:
+    """Takes the API contents and readies them to be saved to csv.
+    Returns a tuple containing:
+      a list of all API items to be inserted into the csv 
+      a list of all column keys that appeared during iteration."""
     logger = get_logger()
 
     if not isinstance(file_path, str):
@@ -48,20 +50,17 @@ def export_api_data_to_csv(api_data: dict, file_path: str) -> bool:
     if not api_data.get('events'):
         raise ValueError("API data did not return correctly.")
 
-    list_of_items = []
+    item_rows = []
     api_events = api_data['events']
-    """Events comprise main API data
-    For each event, we need to access 'items'
-    and then output this to the csv per row"""
+
     all_keys = set()
     for event in api_events:
         for event_item in event['items']:
-            list_of_items.append(event_item)
+            item_rows.append(event_item)
             all_keys.update(event_item.keys())
     keys = sorted(all_keys)
-    logger.info("Updating data keys.")
 
-    return save_to_csv(list_of_items, keys, file_path)
+    return (item_rows, keys)
 
 
 def save_to_csv(api_data: dict, keys: list, file_path: str) -> bool:
@@ -83,7 +82,8 @@ def run_extract(file_path: str,
                 curr_time: int = int(time.time())) -> bool:
     """Runs all required extract functions in succession for the ETL pipeline."""
     api_data = fetch_api_data(curr_time)
-    return export_api_data_to_csv(api_data, file_path)
+    api_rows, api_columns = api_data_to_rows_and_columns(api_data, file_path)
+    return save_to_csv(api_rows, api_columns)
 
 
 def get_time_offset(curr_time: int = int(time.time()), offset: int = 200) -> int:
@@ -92,4 +92,5 @@ def get_time_offset(curr_time: int = int(time.time()), offset: int = 200) -> int
 
 
 if __name__ == "__main__":
+    set_logger()
     run_extract('data/output.csv')
