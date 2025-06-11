@@ -63,7 +63,7 @@ def validate_api_data(api_data: dict, file_path: str) -> str:
 
     new_file_path = os.path.dirname(__file__) + '/' + file_path
 
-    if not os.path.isdir(os.path.dirname(file_path)):
+    if not os.path.isdir(os.path.dirname(new_file_path)):
         logger.critical("Folder path doesn't exist.")
         raise OSError("Folder path doesn't exist.")
     if new_file_path[-4:] != '.csv':
