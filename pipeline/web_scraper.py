@@ -8,8 +8,11 @@ def filter_tags(tags: list[str]) -> list[str]:
 
     genres = []
     for tag in tags:
+        print(tag)
         if tag[0].islower():
             genres.append(tag)
+        else:
+            continue
     return genres
 
 
@@ -50,5 +53,3 @@ if __name__ == "__main__":
         "https://daybehavior.bandcamp.com/track/silver-song")
     release = get_release_dates(html)
     genres = get_genres(html)
-    print(release)
-    print(genres)
