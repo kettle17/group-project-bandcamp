@@ -9,9 +9,11 @@ import requests
 
 from utilities import get_logger, set_logger
 
+BANDCAMP_API_URL = "https://bandcamp.com/api/salesfeed/1/get?start_date="
+
 
 def get_api_request(start_date: int,
-                    bandcamp_url: str = "https://bandcamp.com/api/salesfeed/1/get?start_date="
+                    bandcamp_url: str = BANDCAMP_API_URL
                     ) -> dict:
     """Returns objects from a given API URL call.
     Separated from fetch_api_data to allow mocking."""
@@ -98,8 +100,11 @@ def save_to_csv(api_data: dict, keys: list, file_path: str) -> bool:
             dict_writer = csv.DictWriter(output_file, keys)
             dict_writer.writeheader()
             dict_writer.writerows(api_data)
-    except Exception as exc:
-        logger.info("Error occurred when saving csv file.")
+    except OSError as e:
+        logger.exception("File I/O error.")
+        return False
+    except csv.Error as e:
+        logger.exception("CSV format error.")
         return False
     logger.info("Success!")
     return True

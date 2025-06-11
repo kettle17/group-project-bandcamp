@@ -6,7 +6,14 @@ import pytest
 import os
 import json
 from unittest.mock import patch, mock_open
-from extract import get_api_request, fetch_api_data, api_data_to_rows_and_columns, save_to_csv, run_extract, get_time_offset
+from extract import (
+    get_api_request,
+    fetch_api_data,
+    api_data_to_rows_and_columns,
+    save_to_csv,
+    run_extract,
+    get_time_offset
+)
 
 """get_api_request tests"""
 
