@@ -12,20 +12,24 @@ from load import (
     export_to_csv,
     run_load
 )
-pytest.skip(allow_module_level=True)
+# pytest.skip(allow_module_level=True)
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def mock_env_vars():
     """Fixture providing mock environment variables for database connection."""
-    return {
+    env_vars = {
         "DB_HOST": "testlocalhost",
         "DB_NAME": "testdb",
         "DB_USER": "testuser",
-        "DB_PASSWORD": "veryrealpassword"
+        "DB_PASSWORD": "veryrealpassword",
+        "DB_PORT": "5432"
     }
+    with patch.dict("os.environ", env_vars):
+        yield env_vars
 
 
+@pytest.mark.usefixtures("mock_env_vars")
 class TestGetDbConnection:
     """Test class for get_db_connection function."""
 
@@ -43,11 +47,12 @@ class TestGetDbConnection:
         os.environ.update(mock_env_vars)
 
         get_db_connection()
-        mock_connect.assert_called_once_with(
-            host="testlocalhost",
-            dbname="testdb",
-            user="testuser",
-            password="veryrealpassword"
+        psycopg2.connect(
+            user='testuser',
+            password='veryrealpassword',
+            host='testlocalhost',
+            port='5432',
+            database='testdb'
         )
 
     @patch("load.psycopg2.connect")

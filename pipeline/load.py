@@ -12,11 +12,11 @@ def get_db_connection() -> connection:
     """Returns a database connection established using .env credentials."""
     load_dotenv('.env')
     return psycopg2.connect(
-        user=ENV["DATABASE_USERNAME"],
-        password=ENV["DATABASE_PASSWORD"],
-        host=ENV["DATABASE_IP"],
-        port=ENV["DATABASE_PORT"],
-        database=ENV["DATABASE_NAME"]
+        user=ENV["DB_USER"],
+        password=ENV["DB_PASSWORD"],
+        host=ENV["DB_HOST"],
+        port=ENV["DB_PORT"],
+        database=ENV["DB_NAME"]
     )
 
 
