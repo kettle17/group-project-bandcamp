@@ -45,7 +45,7 @@ def get_id_mapping(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
-    """Combines all of the previous functions into one."""
+    """Returns a cleaned pandas dataframe after calling all transform functions in succession."""
     pass
 
 
