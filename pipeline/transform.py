@@ -25,12 +25,12 @@ def handle_missing_values(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def group_sales_by(df: pd.DataFrame, group_by: str = "date") -> pd.DataFrame:
-    """Aggregates total revenue and sales by specified field."""
+    """Returns a pandas dataframe of total revenue and sales aggregated by specified field."""
     pass
 
 
 def filter_by_currency(df: pd.DataFrame, accepted: list = ["USD", "GBP", "EUR"]) -> pd.DataFrame:
-    """Filters rows based on accepted currency types."""
+    """Returns a pandas dataframe filtered using accepted currency types."""
     pass
 
 
