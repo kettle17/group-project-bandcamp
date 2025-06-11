@@ -34,6 +34,11 @@ def filter_by_currency(df: pd.DataFrame, accepted: list = ["USD", "GBP", "EUR"])
     pass
 
 
+def get_id_mapping(df: pd.DataFrame) -> pd.DataFrame:
+    """Adds ID mapping to each foreign key on separate columns."""
+    pass
+
+
 def clean_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     """Combines all of the previous functions into one."""
     pass
