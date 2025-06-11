@@ -1,5 +1,7 @@
 pytest
 pylint
+psycopg2
+psycopg2-binary
 pytest-cov
 python-dotenv
 logging
