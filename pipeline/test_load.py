@@ -55,7 +55,7 @@ def test_upload_to_db_handles_invalid_data_type_df(mock_connect) -> None:
 
 
 def test_upload_to_db_handles_invalid_data_type_connection() -> None:
-    """Test that upload_to_db raises TypeError for invalid DataFrame input."""
+    """Test that upload_to_db raises TypeError for invalid connection input."""
     df = pd.DataFrame({"test_df": [1, 2, 3]})
     with pytest.raises(TypeError):
         upload_to_db(df, 12345)
@@ -89,7 +89,6 @@ def test_upload_to_db_handles_database_error(mock_connect) -> None:
 
 
 @patch("load.pd.DataFrame.to_csv")
-@patch("load.psycopg2.connect")
 def test_export_to_csv_handles_empty_dataframe(mock_to_csv) -> None:
     """Test that export_to_csv handles empty DataFrames without calling to_csv."""
     df = pd.DataFrame()
