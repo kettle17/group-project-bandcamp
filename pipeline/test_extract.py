@@ -171,11 +171,41 @@ def test_api_data_to_rows_and_columns_wrong_value_for_filepath():
 
 
 @patch('extract.get_api_request')
-def test_api_data_to_rows_and_columns_incorrect_data_returned(fake_get_request, incorrect_api_call):
-    """Test that checks that csv isn't saved if the data is incorrectly formatted."""
+def test_api_data_to_rows_and_columns_incorrect_data_returned_no_start_date(fake_get_request, incorrect_api_call):
+    """Test that checks that csv isn't saved if the data is incorrectly formatted (empty request)."""
     fake_get_request.return_value = incorrect_api_call
     with pytest.raises(ValueError):
         api_data_to_rows_and_columns(incorrect_api_call, 'data/output.csv')
+
+
+@patch('extract.get_api_request')
+def test_api_data_to_rows_and_columns_incorrect_data_returned_no_events(fake_get_request):
+    """Test that checks that csv isn't saved if the data is incorrectly formatted (no events)."""
+    fake_get_request.return_value = {
+        "start_date": 1749583860,
+        "end_date": 1749584460,
+        "data_delay_sec": 120,
+        "server_time": 1749584469
+    }
+    api_data = fake_get_request()
+    with pytest.raises(ValueError):
+        api_data_to_rows_and_columns(api_data, 'data/output.csv')
+
+
+@patch('extract.get_api_request')
+def test_api_data_to_rows_and_columns_incorrect_data_returned_empty_events(fake_get_request):
+    """Test that checks that csv isn't saved if the data is incorrectly formatted (events is empty)."""
+    fake_return = {
+        "start_date": 1749583860,
+        "end_date": 1749584460,
+        "data_delay_sec": 120,
+        "events": [{}],
+        "server_time": 1749584469
+    }
+    fake_get_request.return_value = fake_return
+    api_data = fake_get_request()
+    with pytest.raises(ValueError):
+        api_data_to_rows_and_columns(api_data, 'data/output.csv')
 
 
 @patch('extract.get_api_request')

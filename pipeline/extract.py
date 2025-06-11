@@ -45,7 +45,7 @@ def fetch_api_data(start_date: int) -> dict:
 def api_data_to_rows_and_columns(api_data: dict, file_path: str) -> tuple:
     """Takes the API contents and readies them to be saved to csv.
     Returns a tuple containing:
-      a list of all API items to be inserted into the csv 
+      a list of all API items to be inserted into the csv
       a list of all column keys that appeared during iteration."""
     logger = get_logger()
 
@@ -63,10 +63,8 @@ def api_data_to_rows_and_columns(api_data: dict, file_path: str) -> tuple:
     if file_path[-4:] != '.csv':
         logger.critical("Path does not end in .csv.")
         raise ValueError("Path does not end in .csv.")
-    if not api_data.get('start_date'):
-        logger.critical("API data did not return correctly.")
-        raise ValueError("API data did not return correctly.")
-    if not api_data.get('events'):
+    if (not api_data.get('start_date') or not api_data.get('events')
+            or not any(api_data['events'])):
         logger.critical("API data did not return correctly.")
         raise ValueError("API data did not return correctly.")
 
