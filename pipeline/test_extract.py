@@ -212,7 +212,9 @@ def test_api_data_to_rows_and_columns_incorrect_data_returned_empty_events(fake_
 def test_api_data_to_rows_and_columns_correct_data_returned(fake_get_request, example_api_call):
     """Test that checks that csv is saved if the data is correctly formatted."""
     fake_get_request.return_value = example_api_call
-    assert api_data_to_rows_and_columns(example_api_call, 'data/output.csv') == (
+    file_path = 'data/output.csv'
+    altered_file_path = os.path.dirname(__file__) + '/' + file_path
+    assert api_data_to_rows_and_columns(example_api_call, file_path) == (
         [
             {'utc_date': 1749638281.672574, 'artist_name': 'Andrew Applepie',
              'item_type': 't', 'item_description': 'When The World Goes Down',
@@ -236,7 +238,8 @@ def test_api_data_to_rows_and_columns_correct_data_returned(fake_get_request, ex
         ['album_title', 'amount_paid', 'amount_paid_fmt', 'amount_paid_usd',
          'art_id', 'art_url', 'artist_name', 'country', 'country_code', 'currency',
          'item_description', 'item_price', 'item_type', 'package_image_id', 'releases',
-         'slug_type', 'track_album_slug_text', 'url', 'utc_date'])
+         'slug_type', 'track_album_slug_text', 'url', 'utc_date'],
+        altered_file_path)
 
 
 """run_extract tests"""

@@ -52,6 +52,8 @@ def api_data_to_rows_and_columns(api_data: dict, file_path: str) -> tuple:
 
     logger.info("Checking API data...")
 
+    file_path = os.path.dirname(__file__) + '/' + file_path
+
     if not isinstance(file_path, str):
         logger.critical("File path is not a string.")
         raise TypeError("File path is not a string.")
@@ -80,7 +82,7 @@ def api_data_to_rows_and_columns(api_data: dict, file_path: str) -> tuple:
             all_keys.update(event_item.keys())
     keys = sorted(all_keys)
 
-    return (item_rows, keys)
+    return (item_rows, keys, file_path)
 
 
 def save_to_csv(api_data: dict, keys: list, file_path: str) -> bool:
@@ -105,8 +107,9 @@ def run_extract(file_path: str,
                 curr_time: int = int(time.time())) -> bool:
     """Runs all required extract functions in succession for the ETL pipeline."""
     api_data = fetch_api_data(curr_time)
-    api_rows, api_columns = api_data_to_rows_and_columns(api_data, file_path)
-    return save_to_csv(api_rows, api_columns, file_path)
+    api_rows, api_columns, validated_file_path = api_data_to_rows_and_columns(
+        api_data, file_path)
+    return save_to_csv(api_rows, api_columns, validated_file_path)
 
 
 def get_time_offset(curr_time: int = int(time.time()), offset: int = 200) -> int:
