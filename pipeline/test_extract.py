@@ -4,6 +4,7 @@
 
 import pytest
 import os
+import json
 from unittest.mock import patch, mock_open
 from extract import get_api_request, fetch_api_data, api_data_to_rows_and_columns, save_to_csv, run_extract, get_time_offset
 
@@ -20,6 +21,22 @@ def test_get_api_request_start_date_should_deny_negative():
     """Test that checks if start_date accepts negative values."""
     with pytest.raises(ValueError):
         get_api_request(-58492573)
+
+
+@patch('requests.get')
+def test_get_api_request_should_deny_404(fake_requests):
+    """Test that checks if function halts if it can't connect."""
+    fake_requests.return_value.status_code = 404
+    with pytest.raises(ConnectionError):
+        get_api_request(24234344)
+
+
+@patch('requests.get')
+def test_get_api_request_correct(fake_requests):
+    """Test that checks if function correctly functions."""
+    fake_requests.return_value.status_code = 200
+    fake_requests.return_value.response = json.dumps({'cool': 'cool'})
+    assert get_api_request(24234344)
 
 
 @pytest.fixture
