@@ -87,7 +87,7 @@ def test_fetch_api_data_start_date_invalid_type():
 
 
 def test_fetch_api_data_start_date_should_deny_negative():
-    """Check if start_date accepts negative values."""
+    """Test that checks if start_date accepts negative values."""
     with pytest.raises(ValueError):
         fetch_api_data(-58492573)
 
@@ -200,11 +200,11 @@ def test_run_extract_correct_data_returned(fake_get_request, fake_output_file, e
 
 
 def tests_get_time_offset_passing_5000_should_return_4800():
-    """Tests if the offset is working."""
+    """Test that checks if the offset is working."""
     assert get_time_offset(5000) == 4800
 
 
 def tests_get_time_offset_raises_errors():
-    """Tests if the function errors as expected."""
+    """Test that checks if the function errors as expected."""
     with pytest.raises(TypeError):
         get_time_offset('I am not an int')
