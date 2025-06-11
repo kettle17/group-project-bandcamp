@@ -16,6 +16,7 @@ def get_api_request(start_date: int,
     """Returns objects from a given API URL call.
     Separated from fetch_api_data to allow mocking."""
     logger = get_logger()
+
     start_date = get_time_offset(start_date)
 
     if start_date < 0:
@@ -52,14 +53,15 @@ def api_data_to_rows_and_columns(api_data: dict, file_path: str) -> tuple:
 
     logger.info("Checking API data...")
 
-    file_path = os.path.dirname(__file__) + '/' + file_path
-
     if not isinstance(file_path, str):
         logger.critical("File path is not a string.")
         raise TypeError("File path is not a string.")
     if not isinstance(api_data, dict):
         logger.critical("Api data is not in the correct format.")
         raise TypeError("Api data is not in the correct format.")
+
+    file_path = os.path.dirname(__file__) + '/' + file_path
+
     if not os.path.isdir(os.path.dirname(file_path)):
         logger.critical("Folder path doesn't exist.")
         raise OSError("Folder path doesn't exist.")

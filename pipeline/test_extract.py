@@ -245,14 +245,20 @@ def test_api_data_to_rows_and_columns_correct_data_returned(fake_get_request, ex
 """run_extract tests"""
 
 
-def test_run_extract_wrong_type_for_filepath():
+@patch('requests.get')
+def test_run_extract_wrong_type_for_filepath(fake_requests):
     """Test that checks if script halts if the file path isn't a string."""
+    fake_requests.return_value.status_code = 200
+    fake_requests.return_value.response = json.dumps({'cool': 'cool'})
     with pytest.raises(TypeError):
         run_extract({"filepath": "i am not a filepath"})
 
 
-def test_run_extract_wrong_value_folder_path_doesnt_exist():
+@patch('requests.get')
+def test_run_extract_wrong_value_folder_path_doesnt_exist(fake_requests, example_api_call):
     """Test that checks if script halts if the folder path doesn't exist."""
+    fake_requests.return_value.status_code = 200
+    fake_requests.return_value.json.return_value = example_api_call
     with pytest.raises(OSError):
         run_extract('data/data/data/data/data/output.csv')
 
