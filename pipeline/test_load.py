@@ -1,5 +1,6 @@
 # pylint: skip-file
 """Test file for the load pipeline."""
+
 import os
 from unittest.mock import patch, MagicMock
 import pytest
@@ -12,6 +13,7 @@ from load import (
     export_to_csv,
     run_load
 )
+
 pytest.skip(allow_module_level=True)
 
 
