@@ -1,7 +1,7 @@
 """Test file for the transform pipeline."""
 
 # pylint: skip-file
-
+import pytest
 from unittest.mock import patch
 import pandas as pd
 
@@ -16,9 +16,10 @@ from transform import (get_required_columns,
                        clean_dataframe,
                        export_dataframe)
 
+# pytest.skip(allow_module_level=True)
+
 
 def test_get_required_columns_returns_the_required_columns(sample_df):
-    """Checks the correct columns and the number of columns returned."""
     result = get_required_columns(sample_df)
     expected_cols = [
         "utc_date", "artist_name", "item_type", "item_description", "album_title",
@@ -29,30 +30,45 @@ def test_get_required_columns_returns_the_required_columns(sample_df):
     assert result.shape[1] == len(expected_cols)
 
 
+def test_get_required_columns_raises_error(empty_df):
+    with pytest.raises(KeyError):
+        get_required_columns(empty_df)
+
+
 def test_check_valid_sale_is_greater_than_zero(sample_df):
-    """Tests that check_valid_sale() returns the correct number of valid sales."""
     result = check_valid_sale(sample_df)
     assert result
 
 
+def test_check_valid_sale_raises_error(bad_df):
+    with pytest.raises(ValueError):
+        check_valid_sale(bad_df)
+
+
 def test_clean_urls_returns_correct_format(sample_df):
-    """Tests that clean_urls begin with the correct formatting."""
     result = clean_urls(sample_df)
     assert result["url"].iloc[0].startswith("https://")
     assert result["art_url"].iloc[1].startswith("https://")
 
 
+def test_clean_urls_raises_error(bad_df):
+    with pytest.raises(ValueError):
+        clean_urls(bad_df)
+
+
 def test_clean_dataframe_returns_not_empty_sample_df(sample_df):
-    """Checks that clean_dataframe returns a non-empty sample_df."""
     result = clean_dataframe(sample_df)
     assert not result.empty
     assert "utc_date" in result.columns
 
 
-def test_handle_missing_values(bad_df):
-    """Tests if handle_missing_values returns the correct number of missing values."""
-    result = handle_missing_values(bad_df)
+def test_clean_dataframe_raises_error(empty_df):
+    with pytest.raises(ValueError):
+        clean_dataframe(empty_df)
 
+
+def test_handle_missing_values(bad_df):
+    result = handle_missing_values(bad_df)
     assert len(result) == 1
     assert result["artist_name"].isnull().sum() == 0
 

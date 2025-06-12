@@ -1,3 +1,5 @@
+"""Includes all of the sample dataframes used for testing."""
+
 import pytest
 import pandas as pd
 
@@ -25,12 +27,12 @@ def sample_df():
 
 @pytest.fixture
 def bad_df():
-    """Returns a pandas DataFrame with intentionally bad/dirty data for testing."""
+    """Returns a pandas DataFrame with intentionally bad data for testing."""
     data = {
         "utc_date": ["not_a_date", None],
         "artist_name": ["", None],
         "item_type": ["x", 123],
-        "item_description": [None, "🎵🧠"],
+        "item_description": [None, 5],
         "album_title": [42, ""],
         "currency": ["usdollars", "€"],
         "amount_paid": ["ten", -5],
@@ -41,4 +43,11 @@ def bad_df():
         "art_url": [None, 12345],
         "event_type": ["", "refund?"]
     }
+    return pd.DataFrame(data)
+
+
+@pytest.fixture
+def empty_df():
+    """Returns a pandas DataFrame with empty data for testing."""
+    data = {}
     return pd.DataFrame(data)
