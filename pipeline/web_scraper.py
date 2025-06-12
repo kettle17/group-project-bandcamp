@@ -51,7 +51,7 @@ def get_release_date(results: Tag, logger) -> str:
     release_date = results.find(
         "div", class_="tralbumData tralbum-credits")
 
-    if release_date != None:
+    if release_date is not None:
         splitlines = release_date.text.splitlines()
         for line in splitlines:
             if "released" in line.strip():
