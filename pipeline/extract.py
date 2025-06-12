@@ -103,9 +103,10 @@ def collect_api_rows_and_columns(api_data: dict) -> tuple:
                     logger.warning("Could not find tags for this entry")
                 if release_and_genre_info is not None:
                     event_item = event_item | release_and_genre_info
+                print(event_item)
             item_rows.append(event_item)
             all_keys.update(event_item.keys())
-    all_keys.add('addl_count')  # hardcode very rare column
+    all_keys.add('addl_count')
     keys = sorted(all_keys)
     return (item_rows, keys)
 
