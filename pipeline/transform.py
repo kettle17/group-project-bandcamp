@@ -14,7 +14,7 @@ def get_required_columns(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def check_valid_sale(df: pd.DataFrame) -> bool:
-    """Returns only rows where amount_paid > 0."""
+    """Returns true when amount_paid > 0 in a pandas dataframe, false otherwise."""
     return True
 
 

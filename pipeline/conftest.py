@@ -1,4 +1,4 @@
-"""Includes all of the sample dataframes used for testing."""
+"""Contains all fixtures used for testing."""
 
 import pytest
 import pandas as pd
