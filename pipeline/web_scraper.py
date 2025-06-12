@@ -17,17 +17,17 @@ def filter_tags(tags: list[str], logger) -> list[str]:
     genres = []
     for tag in tags:
         if tag[0].islower():
-            logger.info(f"Tag is a genre: {tag}")
+            logger.info("Tag is a genre: %s", tag)
             genres.append(tag)
         else:
-            logger.info(f"Tag is not a genre, most likely a location: {tag} ")
+            logger.info("Tag is not a genre, most likely a location: %s", tag)
     return genres
 
 
 def get_relevant_html(url: str, logger) -> Tag:
     """Returns the html element containing details on release date and tags."""
 
-    logger.info(f"Retrieving page to be scraped from '{url}'")
+    logger.info("Retrieving page to be scraped from ' %s'", url)
     page = requests.get(url, timeout=5)
     soup = BeautifulSoup(page.content, "html.parser")
     results = soup.find(id="pgBd")
@@ -51,7 +51,7 @@ def get_release_date(results: Tag, logger) -> str:
     release_date = results.find(
         "div", class_="tralbumData tralbum-credits")
 
-    if release_date is not None:
+    if release_date:
         splitlines = release_date.text.splitlines()
         for line in splitlines:
             if "released" in line.strip():
