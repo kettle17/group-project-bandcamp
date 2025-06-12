@@ -7,11 +7,15 @@ The ETL pipeline will ingest BandCamp sales data, transform it into structured d
 ## 📈 Visualisation
 The data is visualised using Streamlit, a lightweight web app framework chosen for its cost effectiveness and customisation capabilities. Developers can adapt the dashboards to their own needs, offering flexibility in how insights are displayed.
 
-## 📍 Folder Navigation
+## 📍 Folders and Files
 - `documentation/`: ERD, architecture diagram, WBS breakdown, dashboard wireframe, and user stories.
 - `pipeline/`: ETL scripts and related tests.
 - `terraform/`: Infrastructure-as-code files, including Docker configuration for the ETL pipeline.
+- `setup.sh`: A Bash script to create a virtual environment and install all dependencies listed in requirements.txt.
+- `requirements.txt`: Text file containing external library names which are required for the project.
 
+## Setting Up the Environment
+- Run the command `source setup.sh` from the project root directory.
 
 ## 🤐 Environment Variable Structure
 The following are the variables required in the .env file with their placeholders:
