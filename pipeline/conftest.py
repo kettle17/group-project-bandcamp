@@ -6,6 +6,7 @@ import pandas as pd
 
 @pytest.fixture
 def example_api_call():
+    """An example API call from the BandCamp API, calling two event items."""
     return {
         "start_date": 1749583860,
         "end_date": 1749584460,
@@ -72,6 +73,9 @@ def example_api_call():
 
 @pytest.fixture
 def incorrect_api_call():
+    """An incorrect API call from the BandCamp API.
+    This happens when the server time does not match anything in the API
+    For example, calling the current time will return this, as it has not been generated yet."""
     return {
         "server_time": 1749584741
     }
