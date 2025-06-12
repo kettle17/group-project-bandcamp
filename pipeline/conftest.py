@@ -124,3 +124,14 @@ def empty_df():
     """Returns a pandas DataFrame with empty data for testing."""
     data = {}
     return pd.DataFrame(data)
+
+
+@pytest.fixture
+def mock_env_vars():
+    """Fixture providing mock environment variables for database connection."""
+    return {
+        "DB_HOST": "testlocalhost",
+        "DB_NAME": "testdb",
+        "DB_USER": "testuser",
+        "DB_PASSWORD": "veryrealpassword"
+    }

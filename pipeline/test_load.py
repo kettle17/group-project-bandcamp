@@ -17,17 +17,6 @@ from load import (
 pytest.skip(allow_module_level=True)
 
 
-@pytest.fixture
-def mock_env_vars():
-    """Fixture providing mock environment variables for database connection."""
-    return {
-        "DB_HOST": "testlocalhost",
-        "DB_NAME": "testdb",
-        "DB_USER": "testuser",
-        "DB_PASSWORD": "veryrealpassword"
-    }
-
-
 class TestGetDbConnection:
     """Test class for get_db_connection function."""
 
