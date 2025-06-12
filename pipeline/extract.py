@@ -3,11 +3,14 @@
 import time
 import csv
 import os
+import re
 from datetime import datetime
+
 
 import requests
 
 from utilities import get_logger, set_logger
+from web_scraper import get_release_date_and_genres
 
 BANDCAMP_API_URL = "https://bandcamp.com/api/salesfeed/1/get?start_date="
 
@@ -90,6 +93,16 @@ def collect_api_rows_and_columns(api_data: dict) -> tuple:
     all_keys = set()
     for event in api_events:
         for event_item in event['items']:
+            current_url = event_item.get('url')
+            if current_url != None:
+                current_url = re.sub(r'^(https:)?//', '', current_url)
+                try:
+                    release_and_genre_info = get_release_date_and_genres(
+                        ("https://" + current_url), logger)
+                except ValueError:
+                    logger.warning("Could not find tags for this entry")
+                if release_and_genre_info != None:
+                    event_item = event_item | release_and_genre_info
             item_rows.append(event_item)
             all_keys.update(event_item.keys())
     all_keys.add('addl_count')  # hardcode very rare column
