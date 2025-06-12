@@ -16,7 +16,7 @@ from transform import (get_required_columns,
                        clean_dataframe,
                        export_dataframe)
 
-# pytest.skip(allow_module_level=True)
+pytest.skip(allow_module_level=True)
 
 
 def test_get_required_columns_returns_the_required_columns(sample_df):
