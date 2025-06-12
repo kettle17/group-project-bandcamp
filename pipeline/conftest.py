@@ -5,6 +5,56 @@ import pandas as pd
 
 
 @pytest.fixture
+def example_api_call():
+    """An example API call from the BandCamp API, calling two event items."""
+    return {
+        "start_date": 1749583860,
+        "end_date": 1749584460,
+        "data_delay_sec": 120,
+        "events": [
+            {
+                "event_type": "sale",
+                "utc_date": 1749638295.33538,
+                "items": [
+                    {
+                        "utc_date": 1749638295.4456537,
+                        "artist_name": "Ella Zirina",
+                        "item_type": "a",
+                        "item_description": "Boundless Blue, Sunset Hue",
+                        "album_title": None,
+                        "slug_type": "a",
+                        "track_album_slug_text": None,
+                        "currency": "EUR",
+                        "amount_paid": 7,
+                        "item_price": 7,
+                        "amount_paid_usd": 8,
+                        "country": "Japan",
+                        "art_id": 3672109546,
+                        "releases": None,
+                        "package_image_id": None,
+                        "url": "//ellazirina.bandcamp.com/album/boundless-blue-sunset-hue",
+                        "country_code": "jp",
+                        "amount_paid_fmt": "€7",
+                        "art_url": "https://f4.bcbits.com/img/a3672109546_7.jpg"
+                    }
+                ]
+            }
+        ],
+        "server_time": 1749584469
+    }
+
+
+@pytest.fixture
+def incorrect_api_call():
+    """An incorrect API call from the BandCamp API.
+    This happens when the server time does not match anything in the API
+    For example, calling the current time will return this, as it has not been generated yet."""
+    return {
+        "server_time": 1749584741
+    }
+
+
+@pytest.fixture
 def sample_df():
     """Returns a sample pandas DataFrame to test with."""
     data = {
@@ -51,3 +101,14 @@ def empty_df():
     """Returns a pandas DataFrame with empty data for testing."""
     data = {}
     return pd.DataFrame(data)
+
+
+@pytest.fixture
+def mock_env_vars():
+    """Fixture providing mock environment variables for database connection."""
+    return {
+        "DB_HOST": "testlocalhost",
+        "DB_NAME": "testdb",
+        "DB_USER": "testuser",
+        "DB_PASSWORD": "veryrealpassword"
+    }

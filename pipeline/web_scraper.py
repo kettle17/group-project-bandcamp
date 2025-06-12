@@ -20,7 +20,7 @@ def filter_tags(tags: list[str], logger) -> list[str]:
             logger.info(f"Tag is a genre: {tag}")
             genres.append(tag)
         else:
-            logger.info(f"Tag is not a genre, most likely a country: {tag} ")
+            logger.info(f"Tag is not a genre, most likely a location: {tag} ")
     return genres
 
 
@@ -51,10 +51,11 @@ def get_release_date(results: Tag, logger) -> str:
     release_date = results.find(
         "div", class_="tralbumData tralbum-credits")
 
-    splitlines = release_date.text.splitlines()
-    for line in splitlines:
-        if "released" in line.strip():
-            return line.strip()
+    if release_date != None:
+        splitlines = release_date.text.splitlines()
+        for line in splitlines:
+            if "released" in line.strip():
+                return line.strip()
 
     logger.debug("No release date found in HTML content.")
 

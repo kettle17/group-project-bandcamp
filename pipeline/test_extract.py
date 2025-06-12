@@ -17,79 +17,6 @@ from extract import (
 )
 
 
-@pytest.fixture
-def example_api_call():
-    return {
-        "start_date": 1749583860,
-        "end_date": 1749584460,
-        "data_delay_sec": 120,
-        "events": [
-            {
-                "event_type": "sale",
-                "utc_date": 1749638281.9409266,
-                "items": [
-                    {
-                        "utc_date": 1749638281.672574,
-                        "artist_name": "Andrew Applepie",
-                        "item_type": "t",
-                        "item_description": "When The World Goes Down",
-                        "album_title": "A Couple Of Pop Songs",
-                        "slug_type": "t",
-                        "track_album_slug_text": None,
-                        "currency": "EUR",
-                        "amount_paid": 1,
-                        "item_price": 1,
-                        "amount_paid_usd": 1.14,
-                        "country": "Japan",
-                        "art_id": 2194995336,
-                        "releases": None,
-                        "package_image_id": None,
-                        "url": "//andrewapplepie.bandcamp.com/track/when-the-world-goes-down",
-                        "country_code": "jp",
-                        "amount_paid_fmt": "€1",
-                        "art_url": "https://f4.bcbits.com/img/a2194995336_7.jpg"
-                    }
-                ]
-            },
-            {
-                "event_type": "sale",
-                "utc_date": 1749638295.33538,
-                "items": [
-                    {
-                        "utc_date": 1749638295.4456537,
-                        "artist_name": "Ella Zirina",
-                        "item_type": "a",
-                        "item_description": "Boundless Blue, Sunset Hue",
-                        "album_title": None,
-                        "slug_type": "a",
-                        "track_album_slug_text": None,
-                        "currency": "EUR",
-                        "amount_paid": 7,
-                        "item_price": 7,
-                        "amount_paid_usd": 8,
-                        "country": "Japan",
-                        "art_id": 3672109546,
-                        "releases": None,
-                        "package_image_id": None,
-                        "url": "//ellazirina.bandcamp.com/album/boundless-blue-sunset-hue",
-                        "country_code": "jp",
-                        "amount_paid_fmt": "€7",
-                        "art_url": "https://f4.bcbits.com/img/a3672109546_7.jpg"
-                    }
-                ]
-            }
-        ],
-        "server_time": 1749584469
-    }
-
-
-@pytest.fixture
-def incorrect_api_call():
-    return {
-        "server_time": 1749584741
-    }
-
-
 class TestGetAPIRequest:
     """Tests for get_api_request."""
 
@@ -218,34 +145,29 @@ class TestValidateAPIData:
 class TestCollectAPIRowsAndColumns:
     """Tests for collect_api_rows_and_columns. """
 
-    @patch('extract.get_api_request')
-    def test_collect_api_rows_and_columns_correct_data_returned(self, fake_get_request, example_api_call):
+    @patch('extract.get_release_date_and_genres')
+    def test_collect_api_rows_and_columns_correct_data_returned(self, fake_release_date_and_columns, example_api_call):
         """Test that checks that csv is saved if the data is correctly formatted."""
-        fake_get_request.return_value = example_api_call
+        example_api_call
+        fake_release_date_and_columns.return_value = {'genres': [
+            'jazz', 'chamber jazz', 'cool jazz', 'guitar', 'modal jazz'], 'release_date': 'released October 11, 2024'}
+
         assert collect_api_rows_and_columns(example_api_call) == (
             [
-                {'utc_date': 1749638281.672574, 'artist_name': 'Andrew Applepie',
-                 'item_type': 't', 'item_description': 'When The World Goes Down',
-                 'album_title': 'A Couple Of Pop Songs', 'slug_type': 't',
-                 'track_album_slug_text': None, 'currency': 'EUR', 'amount_paid': 1,
-                 'item_price': 1, 'amount_paid_usd': 1.14, 'country': 'Japan',
-                 'art_id': 2194995336, 'releases': None, 'package_image_id': None,
-                 'url': '//andrewapplepie.bandcamp.com/track/when-the-world-goes-down',
-                 'country_code': 'jp', 'amount_paid_fmt': '€1', 'art_url':
-                 'https://f4.bcbits.com/img/a2194995336_7.jpg'},
                 {'utc_date': 1749638295.4456537, 'artist_name': 'Ella Zirina',
                  'item_type': 'a', 'item_description': 'Boundless Blue, Sunset Hue',
                  'album_title': None, 'slug_type': 'a', 'track_album_slug_text': None,
+                 'genres': ['jazz', 'chamber jazz', 'cool jazz', 'guitar', 'modal jazz'],
                  'currency': 'EUR', 'amount_paid': 7, 'item_price': 7, 'amount_paid_usd': 8,
                  'country': 'Japan', 'art_id': 3672109546, 'releases': None,
-                 'package_image_id': None,
+                 'package_image_id': None, 'release_date': 'released October 11, 2024',
                  'url': '//ellazirina.bandcamp.com/album/boundless-blue-sunset-hue',
                  'country_code': 'jp', 'amount_paid_fmt': '€7',
                  'art_url': 'https://f4.bcbits.com/img/a3672109546_7.jpg'
                  }],
             ['addl_count', 'album_title', 'amount_paid', 'amount_paid_fmt', 'amount_paid_usd',
-             'art_id', 'art_url', 'artist_name', 'country', 'country_code', 'currency',
-             'item_description', 'item_price', 'item_type', 'package_image_id', 'releases',
+             'art_id', 'art_url', 'artist_name', 'country', 'country_code', 'currency', 'genres',
+             'item_description', 'item_price', 'item_type', 'package_image_id', 'release_date', 'releases',
              'slug_type', 'track_album_slug_text', 'url', 'utc_date'])
 
 
@@ -284,11 +206,16 @@ class TestRunExtract:
         with pytest.raises(ValueError):
             run_extract('data/output.csv', 1749583860242424)
 
+    @patch('extract.get_release_date_and_genres')
     @patch('extract.get_api_request')
     @patch('extract.save_to_csv')
-    def test_run_extract_correct_data_returned(self, fake_save_to_csv, fake_get_request, example_api_call):
+    def test_run_extract_correct_data_returned(self, fake_save_to_csv, fake_get_request,
+                                               fake_release_date_and_columns,
+                                               example_api_call):
         """Test that checks that csv is saved if the data is correctly formatted."""
         fake_get_request.return_value = example_api_call
+        fake_release_date_and_columns.return_value == {'genres': [
+            'jazz', 'chamber jazz', 'cool jazz', 'guitar', 'modal jazz'], 'release_date': 'released October 11, 2024'}
         fake_save_to_csv.return_value = True
         assert run_extract('data/output.csv', 2380921482190481)
 
