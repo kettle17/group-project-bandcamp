@@ -8,6 +8,7 @@ This directory contains the Streamlit configuration, used to deploy a web applic
 
 ```bash
 streamlit/
+├── .streamlit                   # Folder containing Streamlit theme configuration.
 ├── Live_Data.py                 # Main Streamlit page containing the live data.
 ├── pages                        # Folder containing sub-Streamlit pages.
 ├── pages/Historical_Data.py     # Folder containing sub-Streamlit pages.
