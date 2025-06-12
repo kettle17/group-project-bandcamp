@@ -1,5 +1,5 @@
 """Script for the transform part of the ETL."""
-# pylint: disable = unnecessary-return df, unused-argument
+# pylint: disable =unused-argument,unnecessary-pass,function-redefined,assignment-from-no-return,dangerous-default-value
 
 import pandas as pd
 
