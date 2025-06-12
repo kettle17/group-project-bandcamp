@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup, Tag
 from utilities import set_logger, get_logger
 
 
-def filter_tags(tags: list[str]) -> list[str]:
+def filter_tags(tags: list[str], logger) -> list[str]:
     """Returns a list of filtered tags representing genres from an item listing.
     and not country."""
 
