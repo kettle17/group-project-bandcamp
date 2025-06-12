@@ -94,14 +94,14 @@ def collect_api_rows_and_columns(api_data: dict) -> tuple:
     for event in api_events:
         for event_item in event['items']:
             current_url = event_item.get('url')
-            if current_url is not None:
+            if current_url:
                 current_url = re.sub(r'^(https:)?//', '', current_url)
                 try:
                     release_and_genre_info = get_release_date_and_genres(
                         ("https://" + current_url), logger)
                 except ValueError:
                     logger.warning("Could not find tags for this entry")
-                if release_and_genre_info is not None:
+                if release_and_genre_info:
                     event_item = event_item | release_and_genre_info
                 print(event_item)
             item_rows.append(event_item)
