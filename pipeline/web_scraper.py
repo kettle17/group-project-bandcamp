@@ -4,7 +4,7 @@ from bs4 import BeautifulSoup
 
 
 def filter_tags(tags: list[str]) -> list[str]:
-    """Filters the tags associated with the given item to return genres
+    """Returns a list of filtered tags representing genres from an item listing.
     and not country."""
 
     genres = []
