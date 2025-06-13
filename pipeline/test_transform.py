@@ -8,7 +8,6 @@ import pandas as pd
 from transform import (rename_columns,
                        get_required_columns,
                        handle_missing_values,
-                       filter_by_currency,
                        standardize_dates,
                        sort_by_date,
                        standardize_currency,
