@@ -24,6 +24,12 @@ jobs:
 
   pytest:
     runs-on: ubuntu-latest
+    env:
+      DB_USER: testuser
+      DB_PASSWORD: veryrealpassword
+      DB_HOST: testlocalhost
+      DB_PORT: 5432
+      DB_NAME: testdb
     steps:
       - name: Checkout
         uses: actions/checkout@v3
