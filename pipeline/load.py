@@ -1,7 +1,7 @@
 # pylint: skip-file
 """Script for the load portion of the ETL pipeline."""
 
-from os import environ as ENV, path
+import os
 import pandas as pd
 import psycopg2
 from dotenv import load_dotenv
@@ -12,15 +12,13 @@ from utilities import get_logger, set_logger
 
 
 def get_db_connection() -> connection:
-    """Returns a database connection established using .env credentials."""
     load_dotenv('.env')
     return psycopg2.connect(
-        user=ENV["DB_USER"],
-        password=ENV["DB_PASSWORD"],
-        host=ENV["DB_HOST"],
-        port=ENV["DB_PORT"],
-        database=ENV["DB_NAME"],
-        cursor_factory=RealDictCursor
+        user=os.environ["DB_USER"],
+        password=os.environ["DB_PASSWORD"],
+        host=os.environ["DB_HOST"],
+        port=os.environ["DB_PORT"],
+        database=os.environ["DB_NAME"]
     )
 
 
@@ -301,7 +299,7 @@ def run_load(dataframe: pd.DataFrame = None, csv_path: str = None) -> None:
         raise ValueError("Either dataframe or csv_path must be provided.")
 
     if csv_path is not None:
-        if not path.exists(csv_path):
+        if not os.path.exists(csv_path):
             raise FileNotFoundError(f"CSV file not found: {csv_path}")
         dataframe = pd.read_csv(csv_path, parse_dates=['utc_date'])
         logger.info(f"CSV loaded from {csv_path}")

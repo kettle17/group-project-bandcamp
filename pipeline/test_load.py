@@ -328,7 +328,7 @@ class TestUploadToDb:
 class TestRunLoad:
     """Test class for run_load function."""
 
-    @patch("load.path.exists", return_value=False)
+    @patch("load.os.path.exists", return_value=False)
     def test_handles_missing_file(self, mock_exists):
         """Test that run_load handles missing transformed_data.csv file gracefully."""
         with pytest.raises(FileNotFoundError):
@@ -350,7 +350,7 @@ class TestRunLoad:
             run_load()
 
     @patch("load.pd.read_csv")
-    @patch("load.path.exists", return_value=True)
+    @patch("load.os.path.exists", return_value=True)
     @patch("load.upload_to_db")
     @patch("load.get_db_connection")
     def test_executes_required_functions(self, mock_get_conn, mock_upload, mock_exists, mock_read_csv):
