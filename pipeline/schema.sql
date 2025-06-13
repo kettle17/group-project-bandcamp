@@ -1,5 +1,3 @@
--- This file contains all SQL commands to create the tables and relationships for the tracktion database.
-
 DROP TABLE IF EXISTS album_tag_assignment;
 DROP TABLE IF EXISTS track_tag_assignment;
 DROP TABLE IF EXISTS artist_merchandise_assignment;
