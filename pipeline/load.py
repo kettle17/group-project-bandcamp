@@ -1,13 +1,13 @@
 # pylint: skip-file
 """Script for the load portion of the ETL pipeline."""
 
-from os import environ as ENV
+from os import environ as ENV, path
 import pandas as pd
 import psycopg2
 from dotenv import load_dotenv
 from psycopg2.extensions import connection
 from psycopg2.extensions import cursor as pg_cursor
-from psycopg2.extras import execute_values
+from psycopg2.extras import execute_values, RealDictCursor
 from utilities import get_logger, set_logger
 
 
@@ -19,7 +19,8 @@ def get_db_connection() -> connection:
         password=ENV["DB_PASSWORD"],
         host=ENV["DB_HOST"],
         port=ENV["DB_PORT"],
-        database=ENV["DB_NAME"]
+        database=ENV["DB_NAME"],
+        cursor_factory=RealDictCursor
     )
 
 
@@ -120,7 +121,7 @@ def insert_entities(df: pd.DataFrame, entity_name: str, cursor) -> dict:
         )
         cursor.execute(
             f"SELECT {entity_name}_id, {entity_name}_name FROM {entity_name} WHERE {entity_name}_name = ANY(%s)",
-            ([v[0] for v in values],)
+            ([val[0] for val in values],)
         )
         return {row[f'{entity_name}_name']: row[f'{entity_name}_id'] for row in cursor.fetchall()}
     return {}
@@ -149,25 +150,25 @@ def insert_content(df: pd.DataFrame, content_type: str, cursor) -> dict:
 
     if content_type == 'track':
         values = [
-            (r.get('item_description') or 'Unknown Track', r['url'], r.get('art_url'),
-             float(r['sold_for']) if pd.notna(r.get('sold_for')) else None, r.get('release_date'))
-            for r in records
+            (record.get('item_description') or 'Unknown Track', record['url'], record.get('art_url'),
+             float(record['sold_for']) if pd.notna(record.get('sold_for')) else None, record.get('release_date'))
+            for record in records
         ]
         query = "INSERT INTO track (track_name, url, art_url, sold_for, release_date) VALUES %s RETURNING track_id, url"
 
     elif content_type == 'album':
         values = [
-            (r.get('album_title') or r.get('item_description') or 'Unknown Album', r['url'], r.get('art_url'),
-             float(r['sold_for']) if pd.notna(r.get('sold_for')) else None, r.get('release_date'))
-            for r in records
+            (record.get('album_title') or record.get('item_description') or 'Unknown Album', record['url'], record.get('art_url'),
+             float(record['sold_for']) if pd.notna(record.get('sold_for')) else None, record.get('release_date'))
+            for record in records
         ]
         query = "INSERT INTO album (album_name, url, art_url, sold_for, release_date) VALUES %s RETURNING album_id, url"
 
     elif content_type == 'merchandise':
         values = [
-            (r.get('item_description') or 'Unknown Item', r['url'], r.get('art_url'),
-             float(r['sold_for']) if pd.notna(r.get('sold_for')) else None)
-            for r in records
+            (record.get('item_description') or 'Unknown Item', record['url'], record.get('art_url'),
+             float(record['sold_for']) if pd.notna(record.get('sold_for')) else None)
+            for record in records
         ]
         query = "INSERT INTO merchandise (merchandise_name, url, art_url, sold_for) VALUES %s RETURNING merchandise_id, url"
 
@@ -181,31 +182,139 @@ def insert_content(df: pd.DataFrame, content_type: str, cursor) -> dict:
     return {}
 
 
-def insert_artist_assignments(df: pd.DataFrame, content_type: str, existing: dict, cursor: pg_cursor) -> None:
+def insert_artist_assignments(df: pd.DataFrame, content_type: str, existing: dict, cursor) -> None:
     """Returns None. Inserts links between artists and content (track, album, merch)."""
+    values = [
+        (existing['artist'][record['artist_name']], existing[content_type][record['url']])
+        for record in df.to_dict(orient='records')
+        if record['artist_name'] in existing['artist'] and record['url'] in existing[content_type]
+    ]
+    if values:
+        execute_values(
+            cursor,
+            f"INSERT INTO artist_{content_type}_assignment (artist_id, {content_type}_id) VALUES %s",
+            values
+        )
 
 
-def insert_tag_assignments(df: pd.DataFrame, content_type: str, existing: dict, tag_map: dict, cursor: pg_cursor) -> None:
+def insert_tag_assignments(df: pd.DataFrame, content_type: str, existing: dict, tag_map: dict, cursor) -> None:
     """Returns None. Inserts links between tags and content (track or album)."""
+    values = []
+    for record in df.to_dict(orient='records'):
+        tags = parse_tag_list(record.get('tag_names', ''))
+        for tag in tags:
+            tag = tag.strip().lower()
+            if tag in tag_map and record['url'] in existing[content_type]:
+                values.append((tag_map[tag], existing[content_type][record['url']]))
+    if values:
+        execute_values(
+            cursor,
+            f"INSERT INTO {content_type}_tag_assignment (tag_id, {content_type}_id) VALUES %s ON CONFLICT DO NOTHING",
+            values
+        )
 
 
-def insert_sales_and_assignments(sales: pd.DataFrame, existing: dict, cursor: pg_cursor) -> None:
+def insert_sales_and_assignments(sales: pd.DataFrame, existing: dict, cursor) -> None:
     """Returns None. Inserts sales records and connects them to content (track, album, or merch)."""
+    for row in sales.to_dict(orient='records'):
+        country_id = existing['country'].get(row['country_name'])
+        if not country_id:
+            continue
+
+        cursor.execute(
+            "INSERT INTO sale (utc_date, country_id) VALUES (%s, %s) RETURNING sale_id",
+            (row['utc_date'], country_id)
+        )
+        sale_id = cursor.fetchone()['sale_id']
+        url = row['url']
+
+        if row['slug_type'] == 't' and url in existing['track']:
+            cursor.execute("INSERT INTO sale_track_assignment (track_id, sale_id) VALUES (%s, %s)",
+                           (existing['track'][url], sale_id))
+        elif row['slug_type'] == 'a' and url in existing['album']:
+            cursor.execute("INSERT INTO sale_album_assignment (album_id, sale_id) VALUES (%s, %s)",
+                           (existing['album'][url], sale_id))
+        elif row['slug_type'] == 'p' and url in existing['merchandise']:
+            cursor.execute("INSERT INTO sale_merchandise_assignment (merchandise_id, sale_id) VALUES (%s, %s)",
+                           (existing['merchandise'][url], sale_id))
 
 
-def load_data() -> None:
-    """Returns None. Runs the full ETL process from CSV or DataFrame to database."""
-
-
-def upload_to_db(dataframe: pd.DataFrame, conn: connection) -> None:
+def upload_to_db(dataframe: pd.DataFrame, conn) -> None:
     """Uploads a pandas dataframe to a database."""
+    logger = get_logger()
+
+    if not isinstance(dataframe, pd.DataFrame):
+        raise TypeError("Input must be a pandas DataFrame.")
+    
+    if not hasattr(conn, "cursor") or not callable(conn.cursor):
+        raise TypeError("Invalid database connection.")
+
+    if dataframe.empty:
+        logger.info("Empty dataframe received, nothing to upload.")
+        return
+
+    cursor = conn.cursor()
+
+    try:
+        content_dfs = get_filtered(dataframe)
+        existing = get_existing_entities(cursor, dataframe, content_dfs)
+        filtered_sales = remove_existing_rows(dataframe, existing)
+
+        country_map = insert_entities(filtered_sales, 'country', cursor)
+        artist_map = insert_entities(pd.concat(content_dfs.values(), ignore_index=True), 'artist', cursor)
+        tag_map = insert_tags(pd.concat([content_dfs['track'], content_dfs['album']], ignore_index=True), cursor)
+
+        track_map = insert_content(content_dfs['track'], 'track', cursor)
+        album_map = insert_content(content_dfs['album'], 'album', cursor)
+        merch_map = insert_content(content_dfs['merchandise'], 'merchandise', cursor)
+
+        existing.update({
+            'country': country_map,
+            'artist': artist_map,
+            'tag': tag_map,
+            'track': track_map,
+            'album': album_map,
+            'merchandise': merch_map
+        })
+        insert_artist_assignments(content_dfs['track'], 'track', existing, cursor)
+        insert_artist_assignments(content_dfs['album'], 'album', existing, cursor)
+        insert_artist_assignments(content_dfs['merchandise'], 'merchandise', existing, cursor)
+        insert_tag_assignments(content_dfs['track'], 'track', existing, tag_map, cursor)
+        insert_tag_assignments(content_dfs['album'], 'album', existing, tag_map, cursor)
+        insert_sales_and_assignments(filtered_sales, existing, cursor)
+
+        conn.commit()
+        logger.info("Data uploaded successfully.")
+    except Exception as e:
+        conn.rollback()
+        logger.error(f"Error during upload: {e}")
+        raise
+    finally:
+        cursor.close()
 
 
 def run_load(dataframe: pd.DataFrame = None, csv_path: str = None) -> None:
-    """Runs the functions required for the load portion of the ETL pipeline in succession."""
+    set_logger()
+    logger = get_logger()
+
+    if dataframe is None and csv_path is None:
+        raise ValueError("Either dataframe or csv_path must be provided.")
+
+    if csv_path is not None:
+        if not path.exists(csv_path):
+            raise FileNotFoundError(f"CSV file not found: {csv_path}")
+        dataframe = pd.read_csv(csv_path, parse_dates=['utc_date'])
+        logger.info(f"CSV loaded from {csv_path}")
+
+    if dataframe.empty:
+        logger.info("Empty dataframe received, skipping upload.")
+        return
+
+    conn = get_db_connection()
+    upload_to_db(dataframe, conn)
+    conn.close()
 
 
 if __name__ == "__main__":
     set_logger()
-    conn = get_db_connection()
-    print(conn)
+    run_load(csv_path="data/clean_sales3.csv")

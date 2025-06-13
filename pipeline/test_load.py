@@ -17,7 +17,8 @@ from load import (
     remove_existing_rows,
     insert_entities, 
     insert_tags, 
-    insert_content
+    insert_content,
+    run_load
 )
 # pytest.skip(allow_module_level=True)
 
@@ -287,86 +288,97 @@ class TestInsertContent:
         assert result == {}
 
 
+class TestUploadToDb:
+    """Test class for upload_to_db function."""
 
-# class TestUploadToDb:
-#     """Test class for upload_to_db function."""
+    def test_handles_invalid_data_type_df(self):
+        """Test that upload_to_db raises TypeError for invalid DataFrame input."""
+        with pytest.raises(TypeError):
+            upload_to_db(12345, MagicMock())
 
-#     @patch("load.psycopg2.connect")
-#     def test_handles_invalid_data_type_df(self, mock_connect) -> None:
-#         """Test that upload_to_db raises TypeError for invalid DataFrame input."""
-#         mock_conn = mock_connect.return_value
-#         with pytest.raises(TypeError):
-#             upload_to_db(12345, mock_conn)
+    def test_handles_invalid_data_type_connection(self):
+        """Test that upload_to_db raises TypeError for invalid connection input."""
+        df = pd.DataFrame({"test_df": [1, 2, 3]})
+        with pytest.raises(TypeError):
+            upload_to_db(df, "not_a_connection")
 
-#     def test_handles_invalid_data_type_connection(self) -> None:
-#         """Test that upload_to_db raises TypeError for invalid connection input."""
-#         df = pd.DataFrame({"test_df": [1, 2, 3]})
-#         with pytest.raises(TypeError):
-#             upload_to_db(df, 12345)
+    @patch("load.get_logger")
+    def test_handles_empty_dataframe(self, mock_get_logger):
+        """Test that upload_to_db handles empty DataFrame gracefully."""
+        mock_logger = MagicMock()
+        mock_get_logger.return_value = mock_logger
+        mock_conn = MagicMock()
+        df = pd.DataFrame()
 
-#     @patch("load.psycopg2.connect")
-#     def test_handles_empty_dataframe(self, mock_connect) -> None:
-#         """Test that upload_to_db handles empty DataFrame gracefully."""
-#         mock_conn = mock_connect.return_value
-#         df = pd.DataFrame()
+        upload_to_db(df, mock_conn)
 
-#         upload_to_db(df, mock_conn)
+        mock_logger.info.assert_called_with("Empty dataframe received, nothing to upload.")
+        mock_conn.cursor().execute.assert_not_called()
 
-#         mock_conn.cursor().execute.assert_not_called()
+    @patch("load.get_logger")
+    def test_handles_database_error(self, mock_get_logger):
+        """Test that upload_to_db raises DatabaseError when database insertion fails."""
+        mock_logger = MagicMock()
+        mock_get_logger.return_value = mock_logger
 
-#     @patch("load.psycopg2.connect")
-#     def test_handles_database_error(self, mock_connect) -> None:
-#         """Test that upload_to_db raises DatabaseError when database insertion fails."""
-#         df = pd.DataFrame({"col1": [1, 2], "col2": ["a", "b"]})
+        df = pd.DataFrame({
+            "col1": [1, 2],
+            "col2": ["a", "b"],
+            "slug_type": ["t", "a"],
+            "item_type": ["t", "a"],
+            "url": ["url1", "url2"],
+            "country_name": ["USA", "UK"],
+            "utc_date": pd.to_datetime(["2024-01-01", "2024-01-02"])
+        })
+        mock_conn = MagicMock()
+        mock_cursor = mock_conn.cursor.return_value
+        mock_cursor.execute.side_effect = psycopg2.DatabaseError("DB insertion failed")
 
-#         mock_conn = MagicMock()
-#         mock_cursor = mock_conn.cursor.return_value
-#         mock_cursor.execute.side_effect = psycopg2.DatabaseError(
-#             "DB insertion failed")
+        with pytest.raises(psycopg2.DatabaseError):
+            upload_to_db(df, mock_conn)
 
-#         mock_connect.return_value = mock_conn
+        mock_conn.rollback.assert_called_once()
+        mock_logger.error.assert_called()
 
-#         with pytest.raises(psycopg2.DatabaseError):
-#             upload_to_db(df, mock_conn)
+class TestRunLoad:
+    """Test class for run_load function."""
 
+    @patch("load.path.exists", return_value=False)
+    def test_handles_missing_file(self, mock_exists):
+        """Test that run_load handles missing transformed_data.csv file gracefully."""
+        with pytest.raises(FileNotFoundError):
+            run_load(csv_path="a_missing_file.csv")
 
-# class TestRunLoad:
-#     """Test class for run_load function."""
+    @patch("load.upload_to_db")
+    @patch("load.get_db_connection")
+    def test_handles_empty_dataframe(self, mock_get_conn, mock_upload):
+        """Test that run_load handles empty dataframe input appropriately."""
+        mock_upload.return_value = None
+        df = pd.DataFrame()
+        run_load(dataframe=df)
+        mock_upload.assert_not_called()
+        mock_get_conn.assert_not_called()
 
-#     @patch("load.os.path.exists", return_value=False)
-#     def test_handles_missing_file(self, mock_exists) -> None:
-#         """Test that run_load handles missing transformed_data.csv file gracefully."""
-#         with pytest.raises(FileNotFoundError):
-#             run_load(csv_path="a_missing_file.csv")
+    def test_handles_both_input_types_invalid(self):
+        """Test that run_load handles case where both dataframe and CSV path are invalid."""
+        with pytest.raises(ValueError):
+            run_load()
 
-#     @patch("load.get_db_connection")
-#     @patch("load.upload_to_db")
-#     def test_handles_empty_dataframe(self, mock_upload, mock_get_conn) -> None:
-#         """Test that run_load handles empty dataframe input appropriately."""
-#         df = pd.DataFrame()
-#         run_load(dataframe=df)
-#         mock_upload.assert_not_called()
-#         mock_get_conn.assert_not_called()
+    @patch("load.pd.read_csv")
+    @patch("load.path.exists", return_value=True)
+    @patch("load.upload_to_db")
+    @patch("load.get_db_connection")
+    def test_executes_required_functions(self, mock_get_conn, mock_upload, mock_exists, mock_read_csv):
+        """Test that run_load calls all required functions in correct sequence."""
+        mock_df = pd.DataFrame({"a": [1, 2]})
+        mock_read_csv.return_value = mock_df
+        mock_conn = MagicMock()
+        mock_get_conn.return_value = mock_conn
 
-#     def test_handles_both_input_types_invalid(self) -> None:
-#         """Test that run_load handles case where both dataframe and CSV path are invalid."""
-#         with pytest.raises(ValueError):
-#             run_load()
+        run_load(csv_path="valid.csv")
 
-#     @patch("load.get_db_connection")
-#     @patch("load.upload_to_db")
-#     @patch("load.pd.read_csv")
-#     @patch("load.os.path.exists", return_value=True)
-#     def test_executes_required_functions(self, mock_exists, mock_read_csv, mock_upload, mock_get_conn) -> None:
-#         """Test that run_load calls all required functions in correct sequence."""
-#         mock_df = pd.DataFrame({"a": [1, 2]})
-#         mock_read_csv.return_value = mock_df
-#         mock_conn = MagicMock()
-#         mock_get_conn.return_value = mock_conn
-
-#         run_load(csv_path="valid.csv")
-
-#         mock_exists.assert_called_once_with("valid.csv")
-#         mock_read_csv.assert_called_once_with("valid.csv")
-#         mock_get_conn.assert_called_once()
-#         mock_upload.assert_called_once_with(mock_df, mock_conn)
+        mock_exists.assert_called_once_with("valid.csv")
+        mock_read_csv.assert_called_once_with("valid.csv", parse_dates=['utc_date'])
+        mock_get_conn.assert_called_once()
+        mock_upload.assert_called_once_with(mock_df, mock_conn)
+    

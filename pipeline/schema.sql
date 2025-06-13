@@ -1,5 +1,3 @@
--- This file contains all SQL commands to create the tables and relationships for the tracktion database.
-
 DROP TABLE IF EXISTS album_tag_assignment;
 DROP TABLE IF EXISTS track_tag_assignment;
 DROP TABLE IF EXISTS artist_merchandise_assignment;
@@ -36,7 +34,8 @@ CREATE TABLE tag (
 
 CREATE TABLE merchandise (
     merchandise_id BIGINT GENERATED ALWAYS AS IDENTITY,
-    art_url VARCHAR(255) NOT NULL,
+    merchandise_name VARCHAR(255),
+    art_url VARCHAR(255),
     url VARCHAR(255) NOT NULL,
     sold_for DECIMAL NOT NULL,
     PRIMARY KEY (merchandise_id)
@@ -44,20 +43,20 @@ CREATE TABLE merchandise (
 
 CREATE TABLE album (
     album_id BIGINT GENERATED ALWAYS AS IDENTITY,
-    album_name VARCHAR(50) NOT NULL,
+    album_name TEXT NOT NULL,
     release_date DATE NOT NULL,
     art_url VARCHAR(255),
-    url VARCHAR(255),
+    url VARCHAR(255) NOT NULL,
     sold_for DECIMAL NOT NULL,
     PRIMARY KEY (album_id)
 );
 
 CREATE TABLE track (
     track_id BIGINT GENERATED ALWAYS AS IDENTITY,
-    track_name VARCHAR(50) NOT NULL,
+    track_name TEXT NOT NULL,
     release_date DATE NOT NULL,
     art_url VARCHAR(255),
-    url VARCHAR(255),
+    url VARCHAR(255) NOT NULL,
     sold_for DECIMAL NOT NULL,
     PRIMARY KEY (track_id)
 );
@@ -65,7 +64,6 @@ CREATE TABLE track (
 CREATE TABLE sale (
     sale_id BIGINT GENERATED ALWAYS AS IDENTITY,
     utc_date TIMESTAMP NOT NULL,
-    amount_paid_usd DECIMAL NOT NULL,
     country_id SMALLINT NOT NULL,
     PRIMARY KEY (sale_id),
     FOREIGN KEY (country_id) REFERENCES country (country_id)
