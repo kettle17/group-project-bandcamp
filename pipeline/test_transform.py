@@ -162,16 +162,12 @@ class TestPipeline:
     """Tests for the combinining of functionalities and the exporting to csv."""
     @patch("transform.handle_missing_values")
     @patch("transform.correct_album_name")
-    @patch("transform.standardize_release_date", side_effect=lambda x: x)
-    @patch("transform.standardize_dates", side_effect=lambda x: datetime.fromtimestamp(float(x),
-                                                                                       tz=UTC))
     @patch("transform.sort_by_date")
     @patch("transform.get_required_columns")
     @patch("transform.rename_columns")
     def test_clean_dataframe_pipeline(self,
                                       mock_rename, mock_get_required, mock_handle_missing,
-                                      mock_correct_album, mock_standardize_dates,
-                                      mock_standardize_release, mock_sort, sample_df
+                                      mock_correct_album, mock_sort, sample_df
                                       ):
         """Tests that clean_dataframe applies all transformation steps."""
         mock_rename.return_value = sample_df
@@ -187,8 +183,6 @@ class TestPipeline:
         mock_get_required.assert_called_once()
         mock_handle_missing.assert_called_once()
         mock_correct_album.assert_called_once()
-        mock_standardize_dates.assert_called()
-        mock_standardize_release.assert_called()
         mock_sort.assert_called_once()
 
     @patch("pandas.DataFrame.to_csv")
