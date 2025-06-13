@@ -96,6 +96,7 @@ def collect_api_rows_and_columns(api_data: dict) -> tuple:
             current_url = event_item.get('url')
             if current_url:
                 current_url = re.sub(r'^(https:)?//', '', current_url)
+                event_item['url'] = 'https://' + current_url
                 try:
                     release_and_genre_info = get_release_date_and_genres(
                         ("https://" + current_url), logger)
@@ -103,7 +104,6 @@ def collect_api_rows_and_columns(api_data: dict) -> tuple:
                     logger.warning("Could not find tags for this entry")
                 if release_and_genre_info:
                     event_item = event_item | release_and_genre_info
-                print(event_item)
             item_rows.append(event_item)
             all_keys.update(event_item.keys())
     all_keys.add('addl_count')

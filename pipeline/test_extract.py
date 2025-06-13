@@ -161,7 +161,7 @@ class TestCollectAPIRowsAndColumns:
                  'currency': 'EUR', 'amount_paid': 7, 'item_price': 7, 'amount_paid_usd': 8,
                  'country': 'Japan', 'art_id': 3672109546, 'releases': None,
                  'package_image_id': None, 'release_date': 'released October 11, 2024',
-                 'url': '//ellazirina.bandcamp.com/album/boundless-blue-sunset-hue',
+                 'url': 'https://ellazirina.bandcamp.com/album/boundless-blue-sunset-hue',
                  'country_code': 'jp', 'amount_paid_fmt': '€7',
                  'art_url': 'https://f4.bcbits.com/img/a3672109546_7.jpg'
                  }],
