@@ -132,8 +132,6 @@ def df_no_albums():
         "album_name": ["Old A", "Old B"]
     })
 
-
-@pytest.fixture
 def mock_env_vars():
     """Fixture providing mock environment variables for database connection."""
     return {

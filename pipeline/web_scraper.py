@@ -6,9 +6,8 @@ from utilities import set_logger, get_logger
 
 
 def filter_tags(tags: list[str], logger) -> list[str]:
-    """Filters the tags associated with the given item to return genres
-    and not country. Tags that start with lowercase letter are considered
-    genres."""
+    """Returns a list of filtered tags representing genres from an item listing.
+    and not country."""
 
     if not isinstance(tags, list):
         logger.error("Error: Unexpected type. "
