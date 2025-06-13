@@ -106,7 +106,7 @@ def remove_existing_rows(sales: pd.DataFrame, existing: dict) -> pd.DataFrame:
     return sales[~sales['url'].isin(all_urls)]
 
 
-def insert_entities(df: pd.DataFrame, entity_name: str, cursor) -> dict:
+def insert_entities(df: pd.DataFrame, entity_name: str, cursor: pg_cursor) -> dict:
     """Returns a dictionary mapping entity name to ID after inserting countries or artists."""
     logger = get_logger()
     names = df[[f'{entity_name}_name']].drop_duplicates().dropna()
@@ -127,7 +127,7 @@ def insert_entities(df: pd.DataFrame, entity_name: str, cursor) -> dict:
     return {}
 
 
-def insert_tags(df: pd.DataFrame, cursor) -> dict:
+def insert_tags(df: pd.DataFrame, cursor: pg_cursor) -> dict:
     """Returns a dictionary mapping tag name to ID after inserting new tags."""
     logger = get_logger()
     tags = extract_tags(df['tag_names'])
@@ -143,7 +143,7 @@ def insert_tags(df: pd.DataFrame, cursor) -> dict:
     return {}
 
 
-def insert_content(df: pd.DataFrame, content_type: str, cursor) -> dict:
+def insert_content(df: pd.DataFrame, content_type: str, cursor: pg_cursor) -> dict:
     """Returns a dictionary mapping content URL to its new or existing database ID."""
     logger = get_logger()
     records = df.to_dict(orient="records")
@@ -182,7 +182,7 @@ def insert_content(df: pd.DataFrame, content_type: str, cursor) -> dict:
     return {}
 
 
-def insert_artist_assignments(df: pd.DataFrame, content_type: str, existing: dict, cursor) -> None:
+def insert_artist_assignments(df: pd.DataFrame, content_type: str, existing: dict, cursor: pg_cursor) -> None:
     """Returns None. Inserts links between artists and content (track, album, merch)."""
     values = [
         (existing['artist'][record['artist_name']], existing[content_type][record['url']])
@@ -197,7 +197,7 @@ def insert_artist_assignments(df: pd.DataFrame, content_type: str, existing: dic
         )
 
 
-def insert_tag_assignments(df: pd.DataFrame, content_type: str, existing: dict, tag_map: dict, cursor) -> None:
+def insert_tag_assignments(df: pd.DataFrame, content_type: str, existing: dict, tag_map: dict, cursor: pg_cursor) -> None:
     """Returns None. Inserts links between tags and content (track or album)."""
     values = []
     for record in df.to_dict(orient='records'):
@@ -214,7 +214,7 @@ def insert_tag_assignments(df: pd.DataFrame, content_type: str, existing: dict, 
         )
 
 
-def insert_sales_and_assignments(sales: pd.DataFrame, existing: dict, cursor) -> None:
+def insert_sales_and_assignments(sales: pd.DataFrame, existing: dict, cursor: pg_cursor) -> None:
     """Returns None. Inserts sales records and connects them to content (track, album, or merch)."""
     for row in sales.to_dict(orient='records'):
         country_id = existing['country'].get(row['country_name'])
@@ -239,8 +239,8 @@ def insert_sales_and_assignments(sales: pd.DataFrame, existing: dict, cursor) ->
                            (existing['merchandise'][url], sale_id))
 
 
-def upload_to_db(dataframe: pd.DataFrame, conn) -> None:
-    """Uploads a pandas dataframe to a database."""
+def upload_to_db(dataframe: pd.DataFrame, conn: connection) -> None:
+    """Returns None. Uploads a pandas dataframe to a database."""
     logger = get_logger()
 
     if not isinstance(dataframe, pd.DataFrame):
