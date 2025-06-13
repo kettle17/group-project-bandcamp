@@ -97,6 +97,7 @@ def collect_api_rows_and_columns(api_data: dict) -> tuple:
             if current_url:
                 current_url = re.sub(r'^(https:)?//', '', current_url)
                 event_item['url'] = 'https://' + current_url
+
                 try:
                     release_and_genre_info = get_release_date_and_genres(
                         ("https://" + current_url), logger)

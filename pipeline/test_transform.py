@@ -1,34 +1,56 @@
 """Test file for the transform pipeline."""
 
-# pylint: skip-file
-import pytest
+from datetime import datetime, UTC
 from unittest.mock import patch
+import pytest
 import pandas as pd
 
-from transform import (get_required_columns,
-                       check_valid_sale,
-                       clean_urls,
+from transform import (rename_columns,
+                       get_required_columns,
                        handle_missing_values,
-                       validate_foreign_keys,
-                       get_id_mapping,
-                       filter_by_currency,
-                       add_foreign_key_column,
+                       correct_album_name,
+                       standardize_dates,
+                       standardize_release_date,
+                       sort_by_date,
                        clean_dataframe,
                        export_dataframe)
-
-pytest.skip(allow_module_level=True)
 
 
 class TestCleaningFunctions:
     """Tests for cleaning the DataFrame"""
 
+    def test_rename_all_columns(self, sample_df):
+        """Tests that rename_columns correctly renames specific columns."""
+        renamed_df = rename_columns(sample_df)
+        assert list(renamed_df.columns) == ['utc_date', 'artist_name', 'item_type',
+                                            'item_description', 'album_name', 'currency',
+                                            'amount_paid', 'sold_for', 'country_name',
+                                            'country_code', 'url', 'art_url', 'event_type',
+                                            'slug_type', 'tag_names', 'release_date']
+
+    def test_rename_no_columns(self, bad_df):
+        """Tests that if no columns match, DataFrame remains unchanged."""
+        renamed_df = rename_columns(bad_df)
+        expected_cols = [
+            "utc_date", "artist_name", "item_type", "item_description",
+            "album_name", "currency", "amount_paid", "sold_for",
+            "country_name", "country_code", "url", "art_url",
+            "event_type", "slug_type"
+        ]
+        assert list(renamed_df.columns) == expected_cols
+
+    def test_completely_empty_dataframe(self, empty_df):
+        """Tests renaming on an empty DataFrame."""
+        renamed_df = rename_columns(empty_df)
+        assert renamed_df.empty
+        assert not list(renamed_df.columns)
+
     def test_get_required_columns_returns_the_required_columns(self, sample_df):
         """Tests get_required_columns returns the required columns."""
         result = get_required_columns(sample_df)
         expected_cols = [
-            "utc_date", "artist_name", "item_type", "item_description", "album_title",
-            "currency", "amount_paid", "country",
-            "url", "art_url"
+            "utc_date", "item_type", "album_name", "artist_name", "item_description",
+            "tag_names", "sold_for", "release_date", "country_name", "slug_type", "url", "art_url"
         ]
         assert list(result.columns) == expected_cols
         assert result.shape[1] == len(expected_cols)
@@ -38,27 +60,6 @@ class TestCleaningFunctions:
         with pytest.raises(KeyError):
             get_required_columns(empty_df)
 
-    def test_check_valid_sale_is_greater_than_zero(self, sample_df):
-        """Tests the check_valid_sale function returns true when a sale's value is greater than zero."""
-        result = check_valid_sale(sample_df)
-        assert result
-
-    def test_check_valid_sale_raises_error_when_invalid_df_given(self, bad_df):
-        """Tests the check_valid_sale function raises a ValueError when given an invalid pandas dataframe."""
-        with pytest.raises(ValueError):
-            check_valid_sale(bad_df)
-
-    def test_clean_urls_returns_correct_format(self, sample_df):
-        """Tests clean_urls to check it returns the correct beginning for the url."""
-        result = clean_urls(sample_df)
-        assert result["url"].iloc[0].startswith("https://")
-        assert result["art_url"].iloc[1].startswith("https://")
-
-    def test_clean_urls_raises_error_when_url_is_invalid(self, bad_df):
-        """Tests clean_urls raises a ValueError when the url doesn't start with //."""
-        with pytest.raises(ValueError):
-            clean_urls(bad_df)
-
     def test_clean_dataframe_returns_not_empty_sample_df(self, sample_df):
         """Tests clean_dataframe does not return an empty df."""
         result = clean_dataframe(sample_df)
@@ -67,83 +68,122 @@ class TestCleaningFunctions:
 
     def test_clean_dataframe_raises_error_when_df_is_empty(self, empty_df):
         """Checks that clean_dataframe raises an error when the given df is empty."""
-        with pytest.raises(ValueError):
+        with pytest.raises(KeyError):
             clean_dataframe(empty_df)
 
+
+class TestMissingValues:
+    """Tests for functionalities that doeal with missing values."""
+
     def test_handle_missing_values(self, bad_df):
-        """Tests that handle_missing_values returns correct number of rows with no missing values."""
+        """
+        Tests that handle_missing_values returns correct number 
+        of rows with no missing values.
+        """
         result = handle_missing_values(bad_df)
         assert len(result) == 1
         assert result["artist_name"].isnull().sum() == 0
 
+    def test_handle_missing_values_raises_a_key_error(self, empty_df_with_columns):
+        """Tests hanle_missing_values raises a KeyError if artist_name is not in columns."""
+        with pytest.raises(KeyError):
+            handle_missing_values(empty_df_with_columns)
 
-class TestFilteringFunctions:
-    """Tests for all of the filtering functionalities."""
+    def test_correct_album_name_corrects_album_names(self, df_with_albums):
+        """Tests that correct_album_name returns the correct names. """
+        corrected = correct_album_name(df_with_albums)
+        assert corrected.loc[0, "album_name"] == "Album One"
+        assert corrected.loc[1, "album_name"] == "Track One Album"
+        assert corrected.loc[2, "album_name"] == "Album Two"
 
-    def test_filter_by_currency_default(self, sample_df):
-        """Tests filter_by_currency returns one of the 3 required currencies only."""
-        result = filter_by_currency(sample_df)
-        assert result["currency"].isin(["USD", "GBP", "EUR"]).all()
-        assert result.shape[0] == 2
+    def test_correct_album_name_does_nothing_if_no_albums(self, df_no_albums):
+        """Tests that correct_album_name returns nothing if there are no albums."""
+        corrected = correct_album_name(df_no_albums)
+        assert corrected.equals(df_no_albums)
 
-    def test_filter_by_currency_custom(self, sample_df):
-        """Tests filter_by_currency will return an empty df if the only accepted currency is EUR."""
-        result = filter_by_currency(sample_df, accepted=["EUR"])
-        assert result.empty
+    def test_correct_album_name_with_empty_dataframe(self, empty_df_with_columns):
+        """Tests that correct_album_name returns empty name."""
+        corrected = correct_album_name(empty_df_with_columns)
+        assert corrected.empty
+        assert list(corrected.columns) == [
+            "item_type", "item_description", "album_name"]
+
+    def test_correct_album_name_raises_a_key_error(self, empty_df):
+        """Tests that correct_album_name raises a KeyError when required columns are not there."""
+        with pytest.raises(KeyError):
+            correct_album_name(empty_df)
 
 
-class TestsForeignKeyMapping:
-    """Tests for all of the functions that go into adding foreign keys columns."""
+class TestSortingFunctions:
+    """Tests for all of the sorting functionalities."""
 
-    def test_validate_foreign_keys_structure(self, sample_df):
-        """Tests validate_foreign_keys returns a bool."""
-        result = validate_foreign_keys(sample_df)
-        assert isinstance(result, bool)
+    def test_sort_by_date_returns_correct_order(self, sample_df):
+        """Checks that sort_by_date returns the correct order of dates."""
+        sorted_df = sort_by_date(sample_df.copy())
+        utc_dates = sorted_df["utc_date"].tolist()
+        assert utc_dates == sorted(
+            utc_dates), "Dates are not sorted in ascending order"
 
-    @patch("transform.get_id_mapping")
-    def test_get_id_mapping_valid(self, mock_query_func, sample_df):
-        """Tests get_id_mapping returns a dict and that it returns the correct id."""
-        mock_query_func.return_value = pd.DataFrame({
-            "artist_name": ["Alex Lynch", "Blackchild (ITA)"],
-            "artist_id": [100, 101]
-        })
-        result = get_id_mapping(sample_df, table_name="artists")
-        assert isinstance(result, dict)
-        assert result["Alex Lynch"] == 100
+    def test_sort_by_date_raises_a_value_error_if_date_is_null(self, bad_df):
+        """Tests that sort_by_date raises a ValueError if utc_date contains nulls."""
+        with pytest.raises(ValueError, match="utc_date column contains null values."):
+            sort_by_date(bad_df)
 
-    @patch("transform.get_id_mapping")
-    def test_add_foreign_key_column_works(self, mock_get_mapping, sample_df):
-        """Tests to check add_foreign_key_column adds the correct column and its values."""
-        mock_get_mapping.return_value = {
-            "Alex Lynch": 100,
-            "Blackchild (ITA)": 101
-        }
-        sample_df = sample_df.copy()
-        result = add_foreign_key_column(sample_df)
-        assert "foreign_key" in result.columns
-        assert result["foreign_key"].tolist() == [100, 101]
+
+class TestStandardizationFunctions:
+    """Tests for all of the standardization functions."""
+
+    def test_standardize_dates_returns_datetime_for_valid_input(self):
+        """Tests that standardize_dates returns a datetime object for valid float input."""
+        timestamp = 1749542761.50579
+        result = standardize_dates(timestamp)
+        assert isinstance(result, datetime)
+
+    def test_standardize_dates_raises_type_error_on_invalid_input(self):
+        """Tests that standardize_dates raises TypeError for non-numeric input."""
+        invalid_input = "not_a_timestamp"
+        with pytest.raises(TypeError):
+            standardize_dates(invalid_input)
+
+    def test_standardize_release_dates_returns_a_datetime(self, sample_df):
+        """Tests that standardize_release_date returns a datetime instance."""
+        date_str = sample_df.loc[0, "release_date"]
+        result = standardize_release_date(date_str)
+        assert isinstance(result, datetime)
+
+    def test_standardize_release_dates_raises_an_error_if_date_is_not_a_string(self):
+        """Tests that standardize_release_date raises ValueError if input is not a valid string."""
+        bad_value = 12345
+        with pytest.raises(TypeError):
+            standardize_release_date(bad_value)
 
 
 class TestPipeline:
     """Tests for the combinining of functionalities and the exporting to csv."""
-
-    @patch("transform.add_foreign_key_column")
-    @patch("transform.validate_foreign_keys", return_value=True)
-    @patch("transform.filter_by_currency")
-    @patch("transform.group_sales_by")
-    def test_clean_dataframe_pipeline(self, mock_group, mock_filter, mock_validate, mock_fk, sample_df):
-        """Tests the clean_dataframe pipeline to see if it returns a df and that all of the functions are called at least once."""
-        mock_group.return_value = sample_df
-        mock_filter.return_value = sample_df
-        mock_fk.return_value = sample_df
+    @patch("transform.handle_missing_values")
+    @patch("transform.correct_album_name")
+    @patch("transform.sort_by_date")
+    @patch("transform.get_required_columns")
+    @patch("transform.rename_columns")
+    def test_clean_dataframe_pipeline(self,
+                                      mock_rename, mock_get_required, mock_handle_missing,
+                                      mock_correct_album, mock_sort, sample_df
+                                      ):
+        """Tests that clean_dataframe applies all transformation steps."""
+        mock_rename.return_value = sample_df
+        mock_get_required.return_value = sample_df
+        mock_handle_missing.return_value = sample_df
+        mock_correct_album.return_value = sample_df
+        mock_sort.return_value = sample_df
 
         result = clean_dataframe(sample_df)
 
         assert isinstance(result, pd.DataFrame)
-        mock_filter.assert_called_once()
-        mock_group.assert_called_once()
-        mock_fk.assert_called_once()
-        mock_validate.assert_called_once()
+        mock_rename.assert_called_once()
+        mock_get_required.assert_called_once()
+        mock_handle_missing.assert_called_once()
+        mock_correct_album.assert_called_once()
+        mock_sort.assert_called_once()
 
     @patch("pandas.DataFrame.to_csv")
     def test_export_dataframe_call(self, mock_to_csv, sample_df):
