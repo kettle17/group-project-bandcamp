@@ -1,5 +1,6 @@
 # pylint: skip-file
 """Test file for the load pipeline."""
+
 import os
 from unittest.mock import patch, MagicMock
 import pytest
@@ -20,22 +21,6 @@ from load import (
     insert_content,
     run_load
 )
-# pytest.skip(allow_module_level=True)
-
-
-@pytest.fixture(autouse=True)
-def mock_env_vars():
-    """Fixture providing mock environment variables for database connection."""
-    env_vars = {
-        "DB_HOST": "testlocalhost",
-        "DB_NAME": "testdb",
-        "DB_USER": "testuser",
-        "DB_PASSWORD": "veryrealpassword",
-        "DB_PORT": "5432"
-    }
-    with patch.dict("os.environ", env_vars):
-        yield env_vars
-
 
 @pytest.mark.usefixtures("mock_env_vars")
 class TestGetDbConnection:

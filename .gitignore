@@ -57,6 +57,7 @@ node_modules/
 
 # testing
 /coverage
+.coverage
 
 # production
 /build
@@ -94,3 +95,4 @@ pycache/*
 
 .csv
 .parquet
+.coverage
