@@ -48,6 +48,7 @@ def get_filtered(sales: pd.DataFrame) -> dict[str, pd.DataFrame]:
         'merchandise': sales[(sales['slug_type'] == 'p')].copy()
     }
 
+
 def load_sales_csv() -> pd.DataFrame:
     """Returns the full sales DataFrame from the CSV file."""
     logger = get_logger()
@@ -55,12 +56,52 @@ def load_sales_csv() -> pd.DataFrame:
     return pd.read_csv('data/clean_sales3.csv', parse_dates=['utc_date'])
 
 
-def load_existing(cursor: pg_cursor, sales: pd.DataFrame, content_dfs: dict[str, pd.DataFrame]) -> dict:
+def load_existing(cursor, sales: pd.DataFrame, content_dfs: dict[str, pd.DataFrame]) -> dict:
     """Returns a dictionary of existing database values like countries, artists, tags, and content."""
+    logger = get_logger()
+    logger.info("Checking existing records...")
+    existing = {}
+
+    country_names = sales['country_name'].dropna().unique().tolist()
+    cursor.execute(
+        "SELECT country_id, country_name FROM country WHERE country_name = ANY(%s)",
+        (country_names,)
+    )
+    existing['country'] = {row['country_name']: row['country_id'] for row in cursor.fetchall()}
+
+    all_artists = pd.concat(content_dfs.values(), ignore_index=True)
+    artist_names = all_artists['artist_name'].dropna().unique().tolist()
+    cursor.execute(
+        "SELECT artist_id, artist_name FROM artist WHERE artist_name = ANY(%s)",
+        (artist_names,)
+    )
+    existing['artist'] = {row['artist_name']: row['artist_id'] for row in cursor.fetchall()}
+
+    combined_tags = pd.concat([content_dfs['track']['tag_names'], content_dfs['album']['tag_names']])
+    tags = extract_tags(combined_tags)
+    cursor.execute(
+        "SELECT tag_id, tag_name FROM tag WHERE tag_name = ANY(%s)",
+        (tags,)
+    )
+    existing['tag'] = {row['tag_name']: row['tag_id'] for row in cursor.fetchall()}
+
+    for key in ['track', 'album', 'merchandise']:
+        urls = content_dfs[key]['url'].dropna().unique().tolist()
+        cursor.execute(
+            f"SELECT {key}_id, url FROM {key} WHERE url = ANY(%s)",
+            (urls,)
+        )
+        existing[key] = {row['url']: row[f'{key}_id'] for row in cursor.fetchall()}
+
+    return existing
 
 
 def remove_existing(sales: pd.DataFrame, existing: dict) -> pd.DataFrame:
     """Returns only the rows that aren't already in the database."""
+    logger = get_logger()
+    logger.info("Removing already loaded entries...")
+    all_urls = set(existing['track']) | set(existing['album']) | set(existing['merchandise'])
+    return sales[~sales['url'].isin(all_urls)]
 
 
 def insert_entities(df: pd.DataFrame, entity_name: str, cursor: pg_cursor) -> dict:

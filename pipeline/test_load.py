@@ -13,7 +13,9 @@ from load import (
     get_filtered,
     upload_to_db,
     export_to_csv,
-    extract_tags
+    extract_tags,
+    load_existing,
+    remove_existing
 )
 # pytest.skip(allow_module_level=True)
 
@@ -139,6 +141,57 @@ class TestGetFiltered:
         expected_merch = df[df['slug_type'] == 'p']
         assert filtered['merchandise'].equals(expected_merch)
 
+
+class TestLoadExisting:
+    """Tests for the load_existing function."""
+
+    def test_load_existing_basic(self):
+        """Test that load_existing returns correct dict keys and mappings."""
+        sales = pd.DataFrame({'country_name': ['USA']})
+        content_dfs = {
+            'track': pd.DataFrame({'artist_name': ['A1'], 'tag_names': ["['rock']"], 'url': ['u1']}),
+            'album': pd.DataFrame({'artist_name': ['A2'], 'tag_names': ["['pop']"], 'url': ['u2']}),
+            'merchandise': pd.DataFrame({'artist_name': ['A3'], 'tag_names': [None], 'url': ['u3']})
+        }
+        cursor = MagicMock()
+        cursor.fetchall.side_effect = [
+            [{'country_id': 1, 'country_name': 'USA'}],
+            [{'artist_id': 10, 'artist_name': 'A1'}, {'artist_id': 20, 'artist_name': 'A2'}, {'artist_id': 30, 'artist_name': 'A3'}],
+            [{'tag_id': 100, 'tag_name': 'rock'}, {'tag_id': 200, 'tag_name': 'pop'}],
+            [{'track_id': 1000, 'url': 'u1'}],
+            [{'album_id': 2000, 'url': 'u2'}],
+            [{'merchandise_id': 3000, 'url': 'u3'}],
+        ]
+
+        result = load_existing(cursor, sales, content_dfs)
+
+        assert 'country' in result
+        assert result['country']['USA'] == 1
+        assert 'artist' in result
+        assert result['artist']['A2'] == 20
+        assert 'tag' in result
+        assert 'rock' in result['tag']
+        assert 'track' in result
+        assert result['track']['u1'] == 1000
+
+
+class TestRemoveExisting:
+    """Tests for the remove_existing function."""
+
+    def test_remove_existing_basic(self):
+        """Test that remove_existing filters out URLs already in existing."""
+        sales = pd.DataFrame({'url': ['u1', 'u2', 'u3']})
+        existing = {
+            'track': {'u1': 1},
+            'album': {'u2': 2},
+            'merchandise': {}
+        }
+
+        filtered = remove_existing(sales, existing)
+
+        assert 'u3' in filtered['url'].values
+        assert 'u1' not in filtered['url'].values
+        assert 'u2' not in filtered['url'].values
 
 
 # class TestUploadToDb:
