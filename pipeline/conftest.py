@@ -14,33 +14,6 @@ def example_api_call():
         "events": [
             {
                 "event_type": "sale",
-                "utc_date": 1749638281.9409266,
-                "items": [
-                    {
-                        "utc_date": 1749638281.672574,
-                        "artist_name": "Andrew Applepie",
-                        "item_type": "t",
-                        "item_description": "When The World Goes Down",
-                        "album_title": "A Couple Of Pop Songs",
-                        "slug_type": "t",
-                        "track_album_slug_text": None,
-                        "currency": "EUR",
-                        "amount_paid": 1,
-                        "item_price": 1,
-                        "amount_paid_usd": 1.14,
-                        "country": "Japan",
-                        "art_id": 2194995336,
-                        "releases": None,
-                        "package_image_id": None,
-                        "url": "//andrewapplepie.bandcamp.com/track/when-the-world-goes-down",
-                        "country_code": "jp",
-                        "amount_paid_fmt": "€1",
-                        "art_url": "https://f4.bcbits.com/img/a2194995336_7.jpg"
-                    }
-                ]
-            },
-            {
-                "event_type": "sale",
                 "utc_date": 1749638295.33538,
                 "items": [
                     {
