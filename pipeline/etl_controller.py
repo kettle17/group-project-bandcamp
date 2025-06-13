@@ -1,4 +1,5 @@
 """Script that combines all individual parts of the ETL into one."""
+# pylint: disable=broad-except
 
 import pandas as pd
 from utilities import get_logger, set_logger
@@ -22,7 +23,7 @@ def run_pipeline() -> None:
         logger.info("Loading...")
         run_load(clean_df)
         logger.info("Success!...")
-    except Exception as exc:
+    except Exception:
         logger.critical("Critical error. Stopping pipeline")
 
 
