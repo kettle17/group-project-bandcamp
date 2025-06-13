@@ -5,22 +5,34 @@ import pytest
 from unittest.mock import patch
 import pandas as pd
 
-from transform import (get_required_columns,
-                       check_valid_sale,
-                       clean_urls,
+from transform import (rename_columns,
+                       get_required_columns,
                        handle_missing_values,
-                       validate_foreign_keys,
-                       get_id_mapping,
                        filter_by_currency,
-                       add_foreign_key_column,
+                       standardize_dates,
+                       sort_by_date,
+                       standardize_currency,
                        clean_dataframe,
                        export_dataframe)
-
-pytest.skip(allow_module_level=True)
 
 
 class TestCleaningFunctions:
     """Tests for cleaning the DataFrame"""
+
+    def test_rename_all_columns(self, sample_df):
+        """Tests that rename_columns can rename all of the columns."""
+        renamed_df = rename_columns(sample_df)
+        assert list(renamed_df.columns) == [
+            "country_name", "album_name", "track_name", "release_date"]
+
+    def test_rename_no_columns(self, bad_df):
+        renamed_df = rename_columns(bad_df)
+        assert list(renamed_df.columns) == ["artist", "price", "genre"]
+
+    def test_completely_empty_dataframe(self, empty_df):
+        renamed_df = rename_columns(empty_df)
+        assert renamed_df.empty
+        assert list(renamed_df.columns) == []
 
     def test_get_required_columns_returns_the_required_columns(self, sample_df):
         """Tests get_required_columns returns the required columns."""
@@ -37,27 +49,6 @@ class TestCleaningFunctions:
         """Tests get_required_columns raises an error when the required columns aren't in the df."""
         with pytest.raises(KeyError):
             get_required_columns(empty_df)
-
-    def test_check_valid_sale_is_greater_than_zero(self, sample_df):
-        """Tests the check_valid_sale function returns true when a sale's value is greater than zero."""
-        result = check_valid_sale(sample_df)
-        assert result
-
-    def test_check_valid_sale_raises_error_when_invalid_df_given(self, bad_df):
-        """Tests the check_valid_sale function raises a ValueError when given an invalid pandas dataframe."""
-        with pytest.raises(ValueError):
-            check_valid_sale(bad_df)
-
-    def test_clean_urls_returns_correct_format(self, sample_df):
-        """Tests clean_urls to check it returns the correct beginning for the url."""
-        result = clean_urls(sample_df)
-        assert result["url"].iloc[0].startswith("https://")
-        assert result["art_url"].iloc[1].startswith("https://")
-
-    def test_clean_urls_raises_error_when_url_is_invalid(self, bad_df):
-        """Tests clean_urls raises a ValueError when the url doesn't start with //."""
-        with pytest.raises(ValueError):
-            clean_urls(bad_df)
 
     def test_clean_dataframe_returns_not_empty_sample_df(self, sample_df):
         """Tests clean_dataframe does not return an empty df."""
@@ -91,37 +82,33 @@ class TestFilteringFunctions:
         result = filter_by_currency(sample_df, accepted=["EUR"])
         assert result.empty
 
+    def test_sort_by_date_returns_correct_order(self, sample_df):
+        """Checks that sort_by_date returns the correct order of dates."""
+        pass
 
-class TestsForeignKeyMapping:
-    """Tests for all of the functions that go into adding foreign keys columns."""
+    def test_sort_by_date_raises_a_value_error_if_date_is_null(self, bad_df):
+        """Tests that sort_by_date raises a ValueError if date is null."""
+        pass
 
-    def test_validate_foreign_keys_structure(self, sample_df):
-        """Tests validate_foreign_keys returns a bool."""
-        result = validate_foreign_keys(sample_df)
-        assert isinstance(result, bool)
 
-    @patch("transform.get_id_mapping")
-    def test_get_id_mapping_valid(self, mock_query_func, sample_df):
-        """Tests get_id_mapping returns a dict and that it returns the correct id."""
-        mock_query_func.return_value = pd.DataFrame({
-            "artist_name": ["Alex Lynch", "Blackchild (ITA)"],
-            "artist_id": [100, 101]
-        })
-        result = get_id_mapping(sample_df, table_name="artists")
-        assert isinstance(result, dict)
-        assert result["Alex Lynch"] == 100
+class TestStandardizationFunctions:
+    """Tests for all of the standardization functions."""
 
-    @patch("transform.get_id_mapping")
-    def test_add_foreign_key_column_works(self, mock_get_mapping, sample_df):
-        """Tests to check add_foreign_key_column adds the correct column and its values."""
-        mock_get_mapping.return_value = {
-            "Alex Lynch": 100,
-            "Blackchild (ITA)": 101
-        }
-        sample_df = sample_df.copy()
-        result = add_foreign_key_column(sample_df)
-        assert "foreign_key" in result.columns
-        assert result["foreign_key"].tolist() == [100, 101]
+    def test_standardize_dates_returns_a_datetime(self, sample_df):
+        """Tests that standardize_dates returns a datetime instance."""
+        pass
+
+    def test_standaize_dates_raises_an_error_if_date_is_not_a_string(self, bad_df):
+        """Tests that standardize_dates raises an ValueError if the argument is not a string."""
+        pass
+
+    def test_standardize_currency_returns_correct_currency(self, sample_df):
+        """Tests that standardize_currency returns the correct value."""
+        pass
+
+    def test_standardize_currency_raises_a_type_error_if_input_is_not_a_float(self, bad_df):
+        """Test that standardize_currency raises a TypeError if value is not a float."""
+        pass
 
 
 class TestPipeline:
