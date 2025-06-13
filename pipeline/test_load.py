@@ -12,10 +12,12 @@ from load import (
     load_sales_csv,
     get_filtered,
     upload_to_db,
-    export_to_csv,
     extract_tags,
-    load_existing,
-    remove_existing
+    get_existing_entities,
+    remove_existing_rows,
+    insert_entities, 
+    insert_tags, 
+    insert_content
 )
 # pytest.skip(allow_module_level=True)
 
@@ -142,56 +144,148 @@ class TestGetFiltered:
         assert filtered['merchandise'].equals(expected_merch)
 
 
-class TestLoadExisting:
+class TestGetExistingEntities:
     """Tests for the load_existing function."""
 
     def test_load_existing_basic(self):
         """Test that load_existing returns correct dict keys and mappings."""
-        sales = pd.DataFrame({'country_name': ['USA']})
+        sales = pd.DataFrame({'country_name': ['United Kingdom']})
         content_dfs = {
-            'track': pd.DataFrame({'artist_name': ['A1'], 'tag_names': ["['rock']"], 'url': ['u1']}),
-            'album': pd.DataFrame({'artist_name': ['A2'], 'tag_names': ["['pop']"], 'url': ['u2']}),
-            'merchandise': pd.DataFrame({'artist_name': ['A3'], 'tag_names': [None], 'url': ['u3']})
+            'track': pd.DataFrame({'artist_name': ['Halogenix'], 'tag_names': ["['drum and bass']"], 'url': ['halogenix-track-1']}),
+            'album': pd.DataFrame({'artist_name': ['Molecular'], 'tag_names': ["['liquid funk']"], 'url': ['molecular-album-1']}),
+            'merchandise': pd.DataFrame({'artist_name': ['Trex'], 'tag_names': [None], 'url': ['trex-merch-1']})
         }
         cursor = MagicMock()
         cursor.fetchall.side_effect = [
-            [{'country_id': 1, 'country_name': 'USA'}],
-            [{'artist_id': 10, 'artist_name': 'A1'}, {'artist_id': 20, 'artist_name': 'A2'}, {'artist_id': 30, 'artist_name': 'A3'}],
-            [{'tag_id': 100, 'tag_name': 'rock'}, {'tag_id': 200, 'tag_name': 'pop'}],
-            [{'track_id': 1000, 'url': 'u1'}],
-            [{'album_id': 2000, 'url': 'u2'}],
-            [{'merchandise_id': 3000, 'url': 'u3'}],
+            [{'country_id': 44, 'country_name': 'United Kingdom'}],
+            [{'artist_id': 101, 'artist_name': 'Halogenix'}, {'artist_id': 202, 'artist_name': 'Molecular'}, {'artist_id': 303, 'artist_name': 'LTJ Bukem'}],
+            [{'tag_id': 1001, 'tag_name': 'drum and bass'}, {'tag_id': 1002, 'tag_name': 'liquid funk'}],
+            [{'track_id': 5555, 'url': 'halogenix-track-1'}],
+            [{'album_id': 6666, 'url': 'molecular-album-1'}],
+            [{'merchandise_id': 7777, 'url': 'trex-merch-1'}],
         ]
 
-        result = load_existing(cursor, sales, content_dfs)
+        result = get_existing_entities(cursor, sales, content_dfs)
 
         assert 'country' in result
-        assert result['country']['USA'] == 1
+        assert result['country']['United Kingdom'] == 44
         assert 'artist' in result
-        assert result['artist']['A2'] == 20
+        assert result['artist']['Molecular'] == 202
         assert 'tag' in result
-        assert 'rock' in result['tag']
+        assert 'drum and bass' in result['tag']
         assert 'track' in result
-        assert result['track']['u1'] == 1000
+        assert result['track']['halogenix-track-1'] == 5555
 
 
-class TestRemoveExisting:
+class TestRemoveExistingRows:
     """Tests for the remove_existing function."""
 
     def test_remove_existing_basic(self):
         """Test that remove_existing filters out URLs already in existing."""
-        sales = pd.DataFrame({'url': ['u1', 'u2', 'u3']})
+        sales = pd.DataFrame({'url': ['u1.com', 'u2.com', 'u3.com']})
         existing = {
-            'track': {'u1': 1},
-            'album': {'u2': 2},
+            'track': {'u1.com': 1},
+            'album': {'u2.com': 2},
             'merchandise': {}
         }
 
-        filtered = remove_existing(sales, existing)
+        filtered = remove_existing_rows(sales, existing)
 
-        assert 'u3' in filtered['url'].values
-        assert 'u1' not in filtered['url'].values
-        assert 'u2' not in filtered['url'].values
+        assert 'u3.com' in filtered['url'].values
+        assert 'u1.com' not in filtered['url'].values
+        assert 'u2.com' not in filtered['url'].values
+
+
+class TestInsertEntities:
+    """Tests for the insert_entities function."""
+    @patch('load.execute_values')
+    def test_inserts_entities_and_returns_mapping(self, mock_execute_values):
+        mock_cursor = MagicMock()
+        mock_cursor.fetchall.return_value = [
+            {'country_name': 'UK', 'country_id': 1},
+            {'country_name': 'FR', 'country_id': 2}
+        ]
+        df = pd.DataFrame({'country_name': ['UK', 'FR', 'UK']})
+
+        result = insert_entities(df, 'country', mock_cursor)
+
+        mock_execute_values.assert_called_once()
+        assert result == {'UK': 1, 'FR': 2}
+
+    def test_returns_empty_dict_when_no_values(self):
+        mock_cursor = MagicMock()
+        df = pd.DataFrame({'country_name': []})
+
+        result = insert_entities(df, 'country', mock_cursor)
+
+        assert result == {}
+
+
+class TestInsertTags:
+    """Tests for the insert_tags function."""
+    @patch('load.execute_values')
+    def test_inserts_tags_and_returns_mapping(self, mock_execute_values):
+        mock_cursor = MagicMock()
+        df = pd.DataFrame({'tag_names': ["['jungle', 'drum and bass']", "['liquid']"]})
+        mock_cursor.fetchall.return_value = [
+            {'tag_name': 'jungle', 'tag_id': 99},
+            {'tag_name': 'drum and bass', 'tag_id': 111},
+            {'tag_name': 'liquid', 'tag_id': 42},
+        ]
+
+        result = insert_tags(df, mock_cursor)
+
+        mock_execute_values.assert_called_once()
+        assert result == {'jungle': 99, 'drum and bass': 111, 'liquid': 42}
+
+    def test_returns_empty_dict_when_no_tags(self):
+        mock_cursor = MagicMock()
+        df = pd.DataFrame({'tag_names': []})
+
+        result = insert_tags(df, mock_cursor)
+
+        assert result == {}
+
+
+class TestInsertContent:
+    """Tests for the insert_content"""
+    @patch('load.execute_values')
+    def test_inserts_tracks_and_returns_url_id_mapping(self, mock_execute_values):
+        mock_cursor = MagicMock()
+        df = pd.DataFrame([
+            {'item_description': 'Track 1', 'url': 'url1', 'art_url': None, 'sold_for': 5.0, 'release_date': '2023-01-01'},
+            {'item_description': 'Track 2', 'url': 'url2', 'art_url': None, 'sold_for': None, 'release_date': None},
+        ])
+        mock_cursor.fetchall.return_value = [
+            {'url': 'url1', 'track_id': 100},
+            {'url': 'url2', 'track_id': 101},
+        ]
+
+        result = insert_content(df, 'track', mock_cursor)
+
+        mock_execute_values.assert_called_once()
+        assert result == {'url1': 100, 'url2': 101}
+
+
+    def test_returns_empty_dict_with_unknown_content_type(self):
+        mock_cursor = MagicMock()
+        df = pd.DataFrame([
+            {'item_description': 'Item', 'url': 'url', 'art_url': None, 'sold_for': 10.0}
+        ])
+
+        result = insert_content(df, 'unknown', mock_cursor)
+
+        assert result == {}
+
+
+    def test_returns_empty_dict_with_empty_df(self):
+        mock_cursor = MagicMock()
+        df = pd.DataFrame([])
+
+        result = insert_content(df, 'track', mock_cursor)
+
+        assert result == {}
+
 
 
 # class TestUploadToDb:
@@ -234,37 +328,6 @@ class TestRemoveExisting:
 
 #         with pytest.raises(psycopg2.DatabaseError):
 #             upload_to_db(df, mock_conn)
-
-
-# class TestExportToCsv:
-#     """Test class for export_to_csv function."""
-
-#     @patch("load.pd.DataFrame.to_csv")
-#     def test_handles_empty_dataframe(self, mock_to_csv) -> None:
-#         """Test that export_to_csv handles empty DataFrames without calling to_csv."""
-#         df = pd.DataFrame()
-
-#         export_to_csv(df)
-
-#         mock_to_csv.assert_not_called()
-
-#     @patch("load.pd.DataFrame.to_csv")
-#     def test_calls_to_csv_method(self, mock_to_csv) -> None:
-#         """Test that export_to_csv calls DataFrame.to_csv method."""
-#         df = pd.DataFrame({"col1": [1, 2, 3]})
-
-#         export_to_csv(df)
-
-#         mock_to_csv.assert_called_once_with("output.csv", index=False)
-
-#     @patch("load.pd.DataFrame.to_csv")
-#     def test_uses_custom_output_path(self, mock_to_csv) -> None:
-#         """Test that export_to_csv uses custom path when provided."""
-#         df = pd.DataFrame({"col1": [1, 2, 3]})
-
-#         export_to_csv(df, "custom.csv")
-
-#         mock_to_csv.assert_called_once_with("custom.csv", index=False)
 
 
 # class TestRunLoad:

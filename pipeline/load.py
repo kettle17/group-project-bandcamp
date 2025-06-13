@@ -7,6 +7,7 @@ import psycopg2
 from dotenv import load_dotenv
 from psycopg2.extensions import connection
 from psycopg2.extensions import cursor as pg_cursor
+from psycopg2.extras import execute_values
 from utilities import get_logger, set_logger
 
 
@@ -56,7 +57,7 @@ def load_sales_csv() -> pd.DataFrame:
     return pd.read_csv('data/clean_sales3.csv', parse_dates=['utc_date'])
 
 
-def load_existing(cursor, sales: pd.DataFrame, content_dfs: dict[str, pd.DataFrame]) -> dict:
+def get_existing_entities(cursor, sales: pd.DataFrame, content_dfs: dict[str, pd.DataFrame]) -> dict:
     """Returns a dictionary of existing database values like countries, artists, tags, and content."""
     logger = get_logger()
     logger.info("Checking existing records...")
@@ -96,7 +97,7 @@ def load_existing(cursor, sales: pd.DataFrame, content_dfs: dict[str, pd.DataFra
     return existing
 
 
-def remove_existing(sales: pd.DataFrame, existing: dict) -> pd.DataFrame:
+def remove_existing_rows(sales: pd.DataFrame, existing: dict) -> pd.DataFrame:
     """Returns only the rows that aren't already in the database."""
     logger = get_logger()
     logger.info("Removing already loaded entries...")
@@ -104,16 +105,80 @@ def remove_existing(sales: pd.DataFrame, existing: dict) -> pd.DataFrame:
     return sales[~sales['url'].isin(all_urls)]
 
 
-def insert_entities(df: pd.DataFrame, entity_name: str, cursor: pg_cursor) -> dict:
+def insert_entities(df: pd.DataFrame, entity_name: str, cursor) -> dict:
     """Returns a dictionary mapping entity name to ID after inserting countries or artists."""
+    logger = get_logger()
+    names = df[[f'{entity_name}_name']].drop_duplicates().dropna()
+    values = [(row[f'{entity_name}_name'],) for row in names.to_dict(orient='records')]
+
+    if values:
+        logger.info(f"Inserting new {entity_name}s...")
+        execute_values(
+            cursor,
+            f"INSERT INTO {entity_name} ({entity_name}_name) VALUES %s ON CONFLICT DO NOTHING",
+            values
+        )
+        cursor.execute(
+            f"SELECT {entity_name}_id, {entity_name}_name FROM {entity_name} WHERE {entity_name}_name = ANY(%s)",
+            ([v[0] for v in values],)
+        )
+        return {row[f'{entity_name}_name']: row[f'{entity_name}_id'] for row in cursor.fetchall()}
+    return {}
 
 
-def insert_tags(df: pd.DataFrame, cursor: pg_cursor) -> dict:
+def insert_tags(df: pd.DataFrame, cursor) -> dict:
     """Returns a dictionary mapping tag name to ID after inserting new tags."""
+    logger = get_logger()
+    tags = extract_tags(df['tag_names'])
+    if tags:
+        logger.info("Inserting new tags...")
+        execute_values(
+            cursor,
+            "INSERT INTO tag (tag_name) VALUES %s ON CONFLICT DO NOTHING",
+            [(tag,) for tag in tags]
+        )
+        cursor.execute("SELECT tag_id, tag_name FROM tag WHERE tag_name = ANY(%s)", (tags,))
+        return {row['tag_name']: row['tag_id'] for row in cursor.fetchall()}
+    return {}
 
 
-def insert_content(df: pd.DataFrame, content_type: str, cursor: pg_cursor) -> dict:
+def insert_content(df: pd.DataFrame, content_type: str, cursor) -> dict:
     """Returns a dictionary mapping content URL to its new or existing database ID."""
+    logger = get_logger()
+    records = df.to_dict(orient="records")
+
+    if content_type == 'track':
+        values = [
+            (r.get('item_description') or 'Unknown Track', r['url'], r.get('art_url'),
+             float(r['sold_for']) if pd.notna(r.get('sold_for')) else None, r.get('release_date'))
+            for r in records
+        ]
+        query = "INSERT INTO track (track_name, url, art_url, sold_for, release_date) VALUES %s RETURNING track_id, url"
+
+    elif content_type == 'album':
+        values = [
+            (r.get('album_title') or r.get('item_description') or 'Unknown Album', r['url'], r.get('art_url'),
+             float(r['sold_for']) if pd.notna(r.get('sold_for')) else None, r.get('release_date'))
+            for r in records
+        ]
+        query = "INSERT INTO album (album_name, url, art_url, sold_for, release_date) VALUES %s RETURNING album_id, url"
+
+    elif content_type == 'merchandise':
+        values = [
+            (r.get('item_description') or 'Unknown Item', r['url'], r.get('art_url'),
+             float(r['sold_for']) if pd.notna(r.get('sold_for')) else None)
+            for r in records
+        ]
+        query = "INSERT INTO merchandise (merchandise_name, url, art_url, sold_for) VALUES %s RETURNING merchandise_id, url"
+
+    else:
+        return {}
+
+    if values:
+        logger.info(f"Inserting {content_type}s...")
+        execute_values(cursor, query, values)
+        return {row['url']: row[f'{content_type}_id'] for row in cursor.fetchall()}
+    return {}
 
 
 def insert_artist_assignments(df: pd.DataFrame, content_type: str, existing: dict, cursor: pg_cursor) -> None:
@@ -129,15 +194,11 @@ def insert_sales_and_assignments(sales: pd.DataFrame, existing: dict, cursor: pg
 
 
 def load_data() -> None:
-    """Returns None. Runs the full ETL process from CSV to database."""
+    """Returns None. Runs the full ETL process from CSV or DataFrame to database."""
 
 
 def upload_to_db(dataframe: pd.DataFrame, conn: connection) -> None:
     """Uploads a pandas dataframe to a database."""
-
-
-def export_to_csv(dataframe: pd.DataFrame, output_path: str = "data/output.txt") -> None:
-    """Exports a dataframe as a csv."""
 
 
 def run_load(dataframe: pd.DataFrame = None, csv_path: str = None) -> None:
