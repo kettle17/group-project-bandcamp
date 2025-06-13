@@ -66,7 +66,6 @@ CREATE TABLE track (
 CREATE TABLE sale (
     sale_id BIGINT GENERATED ALWAYS AS IDENTITY,
     utc_date TIMESTAMP NOT NULL,
-    amount_paid_usd DECIMAL NOT NULL,
     country_id SMALLINT NOT NULL,
     PRIMARY KEY (sale_id),
     FOREIGN KEY (country_id) REFERENCES country (country_id)
