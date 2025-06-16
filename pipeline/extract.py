@@ -8,6 +8,7 @@ from datetime import datetime
 
 
 import requests
+import pandas as pd
 
 from utilities import get_logger, set_logger
 from web_scraper import get_release_date_and_genres
@@ -57,21 +58,24 @@ def validate_api_data(api_data: dict, file_path: str) -> str:
 
     logger.info("Validating API data...")
 
-    if not isinstance(file_path, str):
-        logger.critical("File path is not a string.")
-        raise TypeError("File path is not a string.")
     if not isinstance(api_data, dict):
         logger.critical("Api data is not in the correct format.")
         raise TypeError("Api data is not in the correct format.")
+    if file_path != None:
+        if not isinstance(file_path, str):
+            logger.critical("File path is not a string.")
+            raise TypeError("File path is not a string.")
 
-    new_file_path = os.path.dirname(__file__) + '/' + file_path
+        new_file_path = os.path.dirname(__file__) + '/' + file_path
 
-    if not os.path.isdir(os.path.dirname(new_file_path)):
-        logger.critical("Folder path doesn't exist.")
-        raise OSError("Folder path doesn't exist.")
-    if new_file_path[-4:] != '.csv':
-        logger.critical("Path does not end in .csv.")
-        raise ValueError("Path does not end in .csv.")
+        if not os.path.isdir(os.path.dirname(new_file_path)):
+            logger.critical("Folder path doesn't exist.")
+            raise OSError("Folder path doesn't exist.")
+        if new_file_path[-4:] != '.csv':
+            logger.critical("Path does not end in .csv.")
+            raise ValueError("Path does not end in .csv.")
+    else:
+        new_file_path = None
     if (not api_data.get('start_date') or not api_data.get('events')
             or not any(api_data['events'])):
         logger.critical("API data did not return correctly.")
@@ -87,10 +91,13 @@ def collect_api_rows_and_columns(api_data: dict) -> tuple:
       a list of all column keys that appeared during iteration."""
     logger = get_logger()
     logger.info("Collecting API contents...")
+    timeout_limit = 2
+    timeout_count = 0
     item_rows = []
     api_events = api_data['events']
     logger.info("Grabbing columns...")
     all_keys = set()
+
     for event in api_events:
         for event_item in event['items']:
             current_url = event_item.get('url')
@@ -102,11 +109,20 @@ def collect_api_rows_and_columns(api_data: dict) -> tuple:
                         ("https://" + current_url), logger)
                 except ValueError:
                     logger.warning("Could not find tags for this entry")
+                except requests.exceptions.ReadTimeout:
+                    logger.warning("Request timed out.")
+                    timeout_count += 1
+                    if timeout_count > timeout_limit:
+                        raise requests.exceptions.ReadTimeout(
+                            "Timeout limit exceeded")
                 if release_and_genre_info:
                     event_item = event_item | release_and_genre_info
             item_rows.append(event_item)
             all_keys.update(event_item.keys())
     all_keys.add('addl_count')
+    for row in item_rows:
+        if not row.get('addl_count'):
+            row['addl_count'] = None
     keys = sorted(all_keys)
     return (item_rows, keys)
 
@@ -132,13 +148,15 @@ def save_to_csv(api_data: dict, keys: list, file_path: str) -> bool:
     return True
 
 
-def run_extract(file_path: str,
-                curr_time: int = int(time.time())) -> bool:
+def run_extract(file_path: str = None,
+                curr_time: int = int(time.time())) -> bool | pd.DataFrame:
     """Runs all required extract functions in succession for the ETL pipeline."""
     api_data = fetch_api_data(curr_time)
     directory_file_path = validate_api_data(api_data, file_path)
     api_rows, api_columns = collect_api_rows_and_columns(api_data)
-    return save_to_csv(api_rows, api_columns, directory_file_path)
+    if directory_file_path:
+        return save_to_csv(api_rows, api_columns, directory_file_path)
+    return pd.DataFrame(api_rows)[api_columns]
 
 
 def get_time_offset(curr_time: int = int(time.time()), offset: int = 200) -> int:

@@ -2,6 +2,8 @@
 
 import pytest
 import pandas as pd
+import os
+from unittest.mock import patch
 
 
 @pytest.fixture
@@ -62,15 +64,18 @@ def sample_df():
         "artist_name": ["Alex Lynch", "Blackchild (ITA)"],
         "item_type": ["t", "t"],
         "item_description": ["Thank Me Later", "Nothing Better"],
-        "album_title": [None, "Nothing Better"],
+        "album_name": [None, "Nothing Better"],
         "currency": ["GBP", "GBP"],
         "amount_paid": [1.5, 1.5],
-        "amount_paid_usd": [2.02, 2.02],
-        "country": ["United Kingdom", "Germany"],
+        "sold_for": [2.02, 2.02],
+        "country_name": ["United Kingdom", "Germany"],
         "country_code": ["gb", "de"],
         "url": ["//bandcamp.com/track/1", "//bandcamp.com/track/2"],
         "art_url": ["//image.com/1.jpg", "//image.com/2.jpg"],
-        "event_type": ["sale", "sale"]
+        "event_type": ["sale", "sale"],
+        "slug_type": ["t", "t"],
+        "tag_names": [["rock"], ["rnb"]],
+        "release_date": ["released January 18, 2023", "released January 20, 2023"]
     }
     return pd.DataFrame(data)
 
@@ -91,7 +96,8 @@ def bad_df():
         "country_code": ["XX", None],
         "url": ["not_a_url", ""],
         "art_url": [None, 12345],
-        "event_type": ["", "refund?"]
+        "event_type": ["", "refund?"],
+        "slug_type": ["", None]
     }
     return pd.DataFrame(data)
 
@@ -104,11 +110,42 @@ def empty_df():
 
 
 @pytest.fixture
-def mock_env_vars():
-    """Fixture providing mock environment variables for database connection."""
-    return {
-        "DB_HOST": "testlocalhost",
-        "DB_NAME": "testdb",
-        "DB_USER": "testuser",
-        "DB_PASSWORD": "veryrealpassword"
+def empty_df_with_columns():
+    """Returns an empty DataFrame with the required structure."""
+    return pd.DataFrame(columns=["item_type", "item_description", "album_name"])
+
+
+@pytest.fixture
+def df_with_albums():
+    """Fixture for testing handling missing album names."""
+    return pd.DataFrame({
+        "item_type": ["a", "t", "a"],
+        "item_description": ["Album One", "Track One", "Album Two"],
+        "album_name": [None, "Track One Album", None]
+    })
+
+
+@pytest.fixture
+def df_no_albums():
+    """Fixture for testing handling missing album names."""
+    return pd.DataFrame({
+        "item_type": ["t", "t"],
+        "item_description": ["Track A", "Track B"],
+        "album_name": ["Old A", "Old B"]
+    })
+
+
+@pytest.fixture
+def setup_test_env():
+    """Automatically set up test environment variables for all tests."""
+    test_env = {
+        'DB_USER': 'test_user',
+        'DB_PASSWORD': 'test_password',
+        'DB_HOST': 'localhost',
+        'DB_PORT': '5432',
+        'DB_NAME': 'test_database'
     }
+    
+    with patch.dict(os.environ, test_env):
+        yield
+
