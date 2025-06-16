@@ -1,3 +1,4 @@
+# pylint: skip-file
 """Test file for the transform pipeline."""
 
 from datetime import datetime, UTC

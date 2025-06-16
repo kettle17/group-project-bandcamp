@@ -1,4 +1,3 @@
-# pylint: skip-file
 """Script for the load portion of the ETL pipeline."""
 
 import os
@@ -68,7 +67,7 @@ def get_existing_entities(cursor, sales: pd.DataFrame, content_dfs: dict[str, pd
         "SELECT country_id, country_name FROM country WHERE country_name = ANY(%s)",
         (country_names,)
     )
-    existing['country'] = {row['country_name']: row['country_id'] for row in cursor.fetchall()}
+    existing['country'] = {row['country_name']                           : row['country_id'] for row in cursor.fetchall()}
 
     all_artists = pd.concat(content_dfs.values(), ignore_index=True)
     artist_names = all_artists['artist_name'].dropna().unique().tolist()
@@ -76,15 +75,18 @@ def get_existing_entities(cursor, sales: pd.DataFrame, content_dfs: dict[str, pd
         "SELECT artist_id, artist_name FROM artist WHERE artist_name = ANY(%s)",
         (artist_names,)
     )
-    existing['artist'] = {row['artist_name']: row['artist_id'] for row in cursor.fetchall()}
+    existing['artist'] = {row['artist_name']: row['artist_id']
+                          for row in cursor.fetchall()}
 
-    combined_tags = pd.concat([content_dfs['track']['tag_names'], content_dfs['album']['tag_names']])
+    combined_tags = pd.concat(
+        [content_dfs['track']['tag_names'], content_dfs['album']['tag_names']])
     tags = extract_tags(combined_tags)
     cursor.execute(
         "SELECT tag_id, tag_name FROM tag WHERE tag_name = ANY(%s)",
         (tags,)
     )
-    existing['tag'] = {row['tag_name']: row['tag_id'] for row in cursor.fetchall()}
+    existing['tag'] = {row['tag_name']: row['tag_id']
+                       for row in cursor.fetchall()}
 
     for key in ['track', 'album', 'merchandise']:
         urls = content_dfs[key]['url'].dropna().unique().tolist()
@@ -92,7 +94,8 @@ def get_existing_entities(cursor, sales: pd.DataFrame, content_dfs: dict[str, pd
             f"SELECT {key}_id, url FROM {key} WHERE url = ANY(%s)",
             (urls,)
         )
-        existing[key] = {row['url']: row[f'{key}_id'] for row in cursor.fetchall()}
+        existing[key] = {row['url']: row[f'{key}_id']
+                         for row in cursor.fetchall()}
 
     return existing
 
@@ -101,7 +104,8 @@ def remove_existing_rows(sales: pd.DataFrame, existing: dict) -> pd.DataFrame:
     """Returns only the rows that aren't already in the database."""
     logger = get_logger()
     logger.info("Removing already loaded entries...")
-    all_urls = set(existing['track']) | set(existing['album']) | set(existing['merchandise'])
+    all_urls = set(existing['track']) | set(
+        existing['album']) | set(existing['merchandise'])
     return sales[~sales['url'].isin(all_urls)]
 
 
@@ -109,7 +113,8 @@ def insert_entities(df: pd.DataFrame, entity_name: str, cursor: pg_cursor) -> di
     """Returns a dictionary mapping entity name to ID after inserting countries or artists."""
     logger = get_logger()
     names = df[[f'{entity_name}_name']].drop_duplicates().dropna()
-    values = [(row[f'{entity_name}_name'],) for row in names.to_dict(orient='records')]
+    values = [(row[f'{entity_name}_name'],)
+              for row in names.to_dict(orient='records')]
 
     if values:
         logger.info(f"Inserting new {entity_name}s...")
@@ -137,7 +142,8 @@ def insert_tags(df: pd.DataFrame, cursor: pg_cursor) -> dict:
             "INSERT INTO tag (tag_name) VALUES %s ON CONFLICT DO NOTHING",
             [(tag,) for tag in tags]
         )
-        cursor.execute("SELECT tag_id, tag_name FROM tag WHERE tag_name = ANY(%s)", (tags,))
+        cursor.execute(
+            "SELECT tag_id, tag_name FROM tag WHERE tag_name = ANY(%s)", (tags,))
         return {row['tag_name']: row['tag_id'] for row in cursor.fetchall()}
     return {}
 
@@ -184,7 +190,8 @@ def insert_content(df: pd.DataFrame, content_type: str, cursor: pg_cursor) -> di
 def insert_artist_assignments(df: pd.DataFrame, content_type: str, existing: dict, cursor: pg_cursor) -> None:
     """Returns None. Inserts links between artists and content (track, album, merch)."""
     values = [
-        (existing['artist'][record['artist_name']], existing[content_type][record['url']])
+        (existing['artist'][record['artist_name']],
+         existing[content_type][record['url']])
         for record in df.to_dict(orient='records')
         if record['artist_name'] in existing['artist'] and record['url'] in existing[content_type]
     ]
@@ -204,7 +211,8 @@ def insert_tag_assignments(df: pd.DataFrame, content_type: str, existing: dict, 
         for tag in tags:
             tag = tag.strip().lower()
             if tag in tag_map and record['url'] in existing[content_type]:
-                values.append((tag_map[tag], existing[content_type][record['url']]))
+                values.append(
+                    (tag_map[tag], existing[content_type][record['url']]))
     if values:
         execute_values(
             cursor,
@@ -244,7 +252,7 @@ def upload_to_db(dataframe: pd.DataFrame, conn: connection) -> None:
 
     if not isinstance(dataframe, pd.DataFrame):
         raise TypeError("Input must be a pandas DataFrame.")
-    
+
     if not hasattr(conn, "cursor") or not callable(conn.cursor):
         raise TypeError("Invalid database connection.")
 
@@ -260,12 +268,15 @@ def upload_to_db(dataframe: pd.DataFrame, conn: connection) -> None:
         filtered_sales = remove_existing_rows(dataframe, existing)
 
         country_map = insert_entities(filtered_sales, 'country', cursor)
-        artist_map = insert_entities(pd.concat(content_dfs.values(), ignore_index=True), 'artist', cursor)
-        tag_map = insert_tags(pd.concat([content_dfs['track'], content_dfs['album']], ignore_index=True), cursor)
+        artist_map = insert_entities(
+            pd.concat(content_dfs.values(), ignore_index=True), 'artist', cursor)
+        tag_map = insert_tags(pd.concat(
+            [content_dfs['track'], content_dfs['album']], ignore_index=True), cursor)
 
         track_map = insert_content(content_dfs['track'], 'track', cursor)
         album_map = insert_content(content_dfs['album'], 'album', cursor)
-        merch_map = insert_content(content_dfs['merchandise'], 'merchandise', cursor)
+        merch_map = insert_content(
+            content_dfs['merchandise'], 'merchandise', cursor)
 
         existing.update({
             'country': country_map,
@@ -275,11 +286,16 @@ def upload_to_db(dataframe: pd.DataFrame, conn: connection) -> None:
             'album': album_map,
             'merchandise': merch_map
         })
-        insert_artist_assignments(content_dfs['track'], 'track', existing, cursor)
-        insert_artist_assignments(content_dfs['album'], 'album', existing, cursor)
-        insert_artist_assignments(content_dfs['merchandise'], 'merchandise', existing, cursor)
-        insert_tag_assignments(content_dfs['track'], 'track', existing, tag_map, cursor)
-        insert_tag_assignments(content_dfs['album'], 'album', existing, tag_map, cursor)
+        insert_artist_assignments(
+            content_dfs['track'], 'track', existing, cursor)
+        insert_artist_assignments(
+            content_dfs['album'], 'album', existing, cursor)
+        insert_artist_assignments(
+            content_dfs['merchandise'], 'merchandise', existing, cursor)
+        insert_tag_assignments(
+            content_dfs['track'], 'track', existing, tag_map, cursor)
+        insert_tag_assignments(
+            content_dfs['album'], 'album', existing, tag_map, cursor)
         insert_sales_and_assignments(filtered_sales, existing, cursor)
 
         conn.commit()
