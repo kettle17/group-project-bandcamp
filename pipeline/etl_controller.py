@@ -30,5 +30,20 @@ def run_pipeline() -> None:
         logger.exception("Critical error. Stopping pipeline")
 
 
+def etl_lambda_handler(event, context):
+    """AWS Lambda handler to trigger ETL pipeline."""
+    try:
+        run_pipeline()
+        return {
+            "statusCode": 200,
+            "body": "ETL pipeline executed successfully.",
+        }
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "body": f"ETL pipeline failed: {str(e)}",
+        }
+
+
 if __name__ == "__main__":
     run_pipeline()
