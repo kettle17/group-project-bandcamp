@@ -17,7 +17,7 @@ def run_pipeline() -> None:
 
     try:
         logger.info("Extracting...")
-        run_extract('data/output.csv')
+        run_extract(None)
 
         logger.info("Transforming...")
         raw_df = pd.read_csv('data/output.csv')

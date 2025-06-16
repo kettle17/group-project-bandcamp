@@ -154,7 +154,7 @@ class TestCollectAPIRowsAndColumns:
 
         assert collect_api_rows_and_columns(example_api_call) == (
             [
-                {'utc_date': 1749638295.4456537, 'artist_name': 'Ella Zirina',
+                {'addl_count': None, 'utc_date': 1749638295.4456537, 'artist_name': 'Ella Zirina',
                  'item_type': 'a', 'item_description': 'Boundless Blue, Sunset Hue',
                  'album_title': None, 'slug_type': 'a', 'track_album_slug_text': None,
                  'genres': ['jazz', 'chamber jazz', 'cool jazz', 'guitar', 'modal jazz'],
