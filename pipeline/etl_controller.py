@@ -11,6 +11,7 @@ from load import run_load
 
 def run_pipeline() -> None:
     """Runs each stage of the pipeline in succession."""
+    set_logger()
     logger = get_logger()
     load_dotenv('.env')
 
@@ -30,5 +31,4 @@ def run_pipeline() -> None:
 
 
 if __name__ == "__main__":
-    set_logger()
     run_pipeline()
