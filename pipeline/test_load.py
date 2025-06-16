@@ -23,6 +23,7 @@ from load import (
 )
 
 
+@pytest.mark.usefixtures("setup_test_env")
 class TestGetDbConnection:
     """Test class for get_db_connection function."""
 
