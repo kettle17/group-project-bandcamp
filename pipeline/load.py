@@ -18,7 +18,8 @@ def get_db_connection() -> connection:
         password=os.environ["DB_PASSWORD"],
         host=os.environ["DB_HOST"],
         port=os.environ["DB_PORT"],
-        database=os.environ["DB_NAME"]
+        database=os.environ["DB_NAME"],
+        cursor_factory=RealDictCursor
     )
 
 
@@ -67,7 +68,8 @@ def get_existing_entities(cursor, sales: pd.DataFrame, content_dfs: dict[str, pd
         "SELECT country_id, country_name FROM country WHERE country_name = ANY(%s)",
         (country_names,)
     )
-    existing['country'] = {row['country_name']                           : row['country_id'] for row in cursor.fetchall()}
+
+    existing['country'] = {row['country_name']: row['country_id'] for row in cursor.fetchall()}
 
     all_artists = pd.concat(content_dfs.values(), ignore_index=True)
     artist_names = all_artists['artist_name'].dropna().unique().tolist()
@@ -75,6 +77,7 @@ def get_existing_entities(cursor, sales: pd.DataFrame, content_dfs: dict[str, pd
         "SELECT artist_id, artist_name FROM artist WHERE artist_name = ANY(%s)",
         (artist_names,)
     )
+
     existing['artist'] = {row['artist_name']: row['artist_id']
                           for row in cursor.fetchall()}
 
@@ -148,6 +151,13 @@ def insert_tags(df: pd.DataFrame, cursor: pg_cursor) -> dict:
     return {}
 
 
+def parse_date(date_value):
+    """Returns a date value as None if it's NaN."""
+    if pd.isna(date_value):
+        return None
+    return date_value
+
+
 def insert_content(df: pd.DataFrame, content_type: str, cursor: pg_cursor) -> dict:
     """Returns a dictionary mapping content URL to its new or existing database ID."""
     logger = get_logger()
@@ -155,27 +165,39 @@ def insert_content(df: pd.DataFrame, content_type: str, cursor: pg_cursor) -> di
 
     if content_type == 'track':
         values = [
-            (record.get('item_description') or 'Unknown Track', record['url'], record.get('art_url'),
-             float(record['sold_for']) if pd.notna(record.get('sold_for')) else None, record.get('release_date'))
+            (record.get('item_description') or 'Unknown Track',
+             record['url'],
+             record.get('art_url'),
+             float(record['sold_for']) if pd.notna(
+                 record.get('sold_for')) else None,
+             parse_date(record.get('release_date')))
             for record in records
         ]
         query = "INSERT INTO track (track_name, url, art_url, sold_for, release_date) VALUES %s RETURNING track_id, url"
 
     elif content_type == 'album':
         values = [
-            (record.get('album_title') or record.get('item_description') or 'Unknown Album', record['url'], record.get('art_url'),
-             float(record['sold_for']) if pd.notna(record.get('sold_for')) else None, record.get('release_date'))
+            (record.get('album_title') or record.get('item_description') or 'Unknown Album',
+             record['url'],
+             record.get('art_url'),
+             float(record['sold_for']) if pd.notna(
+                 record.get('sold_for')) else None,
+             parse_date(record.get('release_date')))
             for record in records
         ]
         query = "INSERT INTO album (album_name, url, art_url, sold_for, release_date) VALUES %s RETURNING album_id, url"
 
     elif content_type == 'merchandise':
         values = [
-            (record.get('item_description') or 'Unknown Item', record['url'], record.get('art_url'),
-             float(record['sold_for']) if pd.notna(record.get('sold_for')) else None)
+            (record.get('item_description') or 'Unknown Item',
+             record['url'],
+             record.get('art_url'),
+             float(record['sold_for']) if pd.notna(
+                 record.get('sold_for')) else None,
+             parse_date(record.get('release_date')))
             for record in records
         ]
-        query = "INSERT INTO merchandise (merchandise_name, url, art_url, sold_for) VALUES %s RETURNING merchandise_id, url"
+        query = "INSERT INTO merchandise (merchandise_name, url, art_url, sold_for, release_date) VALUES %s RETURNING merchandise_id, url"
 
     else:
         return {}
@@ -333,4 +355,4 @@ def run_load(dataframe: pd.DataFrame = None, csv_path: str = None) -> None:
 
 if __name__ == "__main__":
     set_logger()
-    run_load(csv_path="data/clean_sales3.csv")
+    run_load(csv_path="data/clean_sales.csv")

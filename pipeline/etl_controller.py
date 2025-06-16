@@ -2,6 +2,7 @@
 # pylint: disable=broad-except
 
 import pandas as pd
+from dotenv import load_dotenv
 from utilities import get_logger, set_logger
 from extract import run_extract
 from transform import clean_dataframe
@@ -11,6 +12,7 @@ from load import run_load
 def run_pipeline() -> None:
     """Runs each stage of the pipeline in succession."""
     logger = get_logger()
+    load_dotenv('.env')
 
     try:
         logger.info("Extracting...")
@@ -24,7 +26,7 @@ def run_pipeline() -> None:
         run_load(clean_df)
         logger.info("Success!...")
     except Exception:
-        logger.critical("Critical error. Stopping pipeline")
+        logger.exception("Critical error. Stopping pipeline")
 
 
 if __name__ == "__main__":

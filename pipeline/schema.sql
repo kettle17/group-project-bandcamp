@@ -35,6 +35,7 @@ CREATE TABLE tag (
 CREATE TABLE merchandise (
     merchandise_id BIGINT GENERATED ALWAYS AS IDENTITY,
     merchandise_name VARCHAR(255),
+    release_date DATE,
     art_url VARCHAR(255),
     url VARCHAR(255) NOT NULL,
     sold_for DECIMAL NOT NULL,
@@ -54,7 +55,7 @@ CREATE TABLE album (
 CREATE TABLE track (
     track_id BIGINT GENERATED ALWAYS AS IDENTITY,
     track_name TEXT NOT NULL,
-    release_date DATE NOT NULL,
+    release_date DATE,
     art_url VARCHAR(255),
     url VARCHAR(255) NOT NULL,
     sold_for DECIMAL NOT NULL,
