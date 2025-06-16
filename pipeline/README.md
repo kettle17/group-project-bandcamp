@@ -24,4 +24,6 @@ We will also use a web scraper to gain additional data such as tag data and rele
 - `test_transform.py` – Tests for `transform.py`  
 - `test_load.py` – Tests for `load.py` 
 
+- `Dockerfile` - File for dockerising the ETL pipeline.
+
 
