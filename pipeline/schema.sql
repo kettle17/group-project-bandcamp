@@ -16,19 +16,19 @@ DROP TABLE IF EXISTS country;
 
 CREATE TABLE country (
     country_id SMALLINT GENERATED ALWAYS AS IDENTITY,
-    country_name VARCHAR(60) NOT NULL,
+    country_name VARCHAR(60) NOT NULL UNIQUE,
     PRIMARY KEY (country_id)
 );
 
 CREATE TABLE artist (
     artist_id BIGINT GENERATED ALWAYS AS IDENTITY,
-    artist_name VARCHAR(100) NOT NULL,
+    artist_name VARCHAR(100) NOT NULL UNIQUE,
     PRIMARY KEY (artist_id)
 );
 
 CREATE TABLE tag (
     tag_id BIGINT GENERATED ALWAYS AS IDENTITY,
-    tag_name VARCHAR(50) NOT NULL,
+    tag_name VARCHAR(50) NOT NULL UNIQUE,
     PRIMARY KEY (tag_id)
 );
 
@@ -37,7 +37,7 @@ CREATE TABLE merchandise (
     merchandise_name VARCHAR(255),
     release_date DATE,
     art_url VARCHAR(255),
-    url VARCHAR(255) NOT NULL,
+    url VARCHAR(255) NOT NULL UNIQUE,
     PRIMARY KEY (merchandise_id)
 );
 
@@ -46,7 +46,7 @@ CREATE TABLE album (
     album_name TEXT NOT NULL,
     release_date DATE,
     art_url VARCHAR(255),
-    url VARCHAR(255) NOT NULL,
+    url VARCHAR(255) NOT NULL UNIQUE,
     PRIMARY KEY (album_id)
 );
 
@@ -55,7 +55,7 @@ CREATE TABLE track (
     track_name TEXT NOT NULL,
     release_date DATE,
     art_url VARCHAR(255),
-    url VARCHAR(255) NOT NULL,
+    url VARCHAR(255) NOT NULL UNIQUE,
     PRIMARY KEY (track_id)
 );
 
@@ -70,7 +70,6 @@ CREATE TABLE sale (
 -- Sale assignment tables 
 
 CREATE TABLE sale_merchandise_assignment (
-
     merchandise_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
     merchandise_id BIGINT NOT NULL,
     sale_id BIGINT NOT NULL,
@@ -82,7 +81,6 @@ CREATE TABLE sale_merchandise_assignment (
 
 
 CREATE TABLE sale_album_assignment (
-
     album_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
     album_id BIGINT NOT NULL,
     sale_id BIGINT NOT NULL,
@@ -94,7 +92,6 @@ CREATE TABLE sale_album_assignment (
 
 
 CREATE TABLE sale_track_assignment (
-
     track_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
     track_id BIGINT NOT NULL,
     sale_id BIGINT NOT NULL,
@@ -108,35 +105,35 @@ CREATE TABLE sale_track_assignment (
 -- Artist Assignment Tables
 
 CREATE TABLE artist_merchandise_assignment (
-
     artist_merch_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
     artist_id BIGINT NOT NULL,
     merchandise_id BIGINT NOT NULL,
     PRIMARY KEY (artist_merch_assignment_id),
     FOREIGN KEY (artist_id) REFERENCES artist (artist_id),
-    FOREIGN KEY (merchandise_id) REFERENCES merchandise (merchandise_id)
+    FOREIGN KEY (merchandise_id) REFERENCES merchandise (merchandise_id),
+    UNIQUE (artist_id, merchandise_id)
 );
 
 
 CREATE TABLE artist_album_assignment (
-
     artist_album_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
     artist_id BIGINT NOT NULL,
     album_id BIGINT NOT NULL,
     PRIMARY KEY (artist_album_assignment_id),
     FOREIGN KEY (artist_id) REFERENCES artist (artist_id),
-    FOREIGN KEY (album_id) REFERENCES album (album_id)
+    FOREIGN KEY (album_id) REFERENCES album (album_id),
+    UNIQUE (artist_id, album_id)
 );
 
 
 CREATE TABLE artist_track_assignment (
-
     artist_track_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
     artist_id BIGINT NOT NULL,
     track_id BIGINT NOT NULL,
     PRIMARY KEY (artist_track_assignment_id),
     FOREIGN KEY (artist_id) REFERENCES artist (artist_id),
-    FOREIGN KEY (track_id) REFERENCES track (track_id)
+    FOREIGN KEY (track_id) REFERENCES track (track_id),
+    UNIQUE (artist_id, track_id)
 );
 
 
@@ -148,7 +145,8 @@ CREATE TABLE track_tag_assignment (
     track_id BIGINT NOT NULL,
     PRIMARY KEY (track_tag_assignment_id),
     FOREIGN KEY (tag_id) REFERENCES tag (tag_id),
-    FOREIGN KEY (track_id) REFERENCES track (track_id)
+    FOREIGN KEY (track_id) REFERENCES track (track_id),
+    UNIQUE (tag_id, track_id)
 );
 
 CREATE TABLE album_tag_assignment (
@@ -157,7 +155,8 @@ CREATE TABLE album_tag_assignment (
     album_id BIGINT NOT NULL,
     PRIMARY KEY (album_tag_assignment_id),
     FOREIGN KEY (tag_id) REFERENCES tag (tag_id),
-    FOREIGN KEY (album_id) REFERENCES album (album_id)
+    FOREIGN KEY (album_id) REFERENCES album (album_id),
+    UNIQUE (tag_id, album_id)
 );
 
 ALTER SEQUENCE country_country_id_seq RESTART WITH 1;
