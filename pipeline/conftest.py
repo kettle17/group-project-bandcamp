@@ -2,6 +2,8 @@
 
 import pytest
 import pandas as pd
+import os
+from unittest.mock import patch
 
 
 @pytest.fixture
@@ -132,11 +134,18 @@ def df_no_albums():
         "album_name": ["Old A", "Old B"]
     })
 
-def mock_env_vars():
-    """Fixture providing mock environment variables for database connection."""
-    return {
-        "DB_HOST": "testlocalhost",
-        "DB_NAME": "testdb",
-        "DB_USER": "testuser",
-        "DB_PASSWORD": "veryrealpassword"
+
+@pytest.fixture
+def setup_test_env():
+    """Automatically set up test environment variables for all tests."""
+    test_env = {
+        'DB_USER': 'test_user',
+        'DB_PASSWORD': 'test_password',
+        'DB_HOST': 'localhost',
+        'DB_PORT': '5432',
+        'DB_NAME': 'test_database'
     }
+    
+    with patch.dict(os.environ, test_env):
+        yield
+
