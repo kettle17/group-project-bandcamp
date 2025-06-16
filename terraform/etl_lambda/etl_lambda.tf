@@ -5,19 +5,6 @@ provider "aws" {
     secret_key = var.AWS_SECRET_ACCESS_KEY
 }
 
-# terraform {
-#   required_providers {
-#     aws = {
-#       source  = "hashicorp/aws"
-#       version = "~> 5.0"
-#     }
-#   }
-# }
-
-######################### 
-### VPC
-#########################
-
 
 data "aws_vpc" "c17-vpc" {
     id = var.VPC_ID
@@ -27,14 +14,6 @@ data "aws_vpc" "c17-vpc" {
 ### ECR
 #########################
 
-# resource "aws_ecr_repository" "pipeline-lambda-ecr-repository" {
-#   name = "c17-tracktion-pipeline-lambda"
-#   image_tag_mutability = "MUTABLE"
-#   image_scanning_configuration {
-#     scan_on_push = true
-#   }
-#   force_delete = true
-# }
 
 data "aws_ecr_repository" "pipeline-lambda-repo" {
   name = "c17-tracktion-etl-ecr"
