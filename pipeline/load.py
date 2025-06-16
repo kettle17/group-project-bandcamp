@@ -25,6 +25,8 @@ def get_db_connection() -> connection:
 
 def parse_tag_list(raw: str) -> list[str]:
     """Returns a list of tags from a string."""
+    if isinstance(raw, list):
+        return [str(t).strip().lower() for t in raw if t]
     if not isinstance(raw, str):
         return []
     raw = raw.strip()
@@ -85,6 +87,7 @@ def get_existing_entities(cursor, sales: pd.DataFrame, content_dfs: dict[str, pd
     combined_tags = pd.concat(
         [content_dfs['track']['tag_names'], content_dfs['album']['tag_names']])
     tags = extract_tags(combined_tags)
+    print(tags)
     cursor.execute(
         "SELECT tag_id, tag_name FROM tag WHERE tag_name = ANY(%s)",
         (tags,)
@@ -172,7 +175,7 @@ def insert_content(df: pd.DataFrame, content_type: str, cursor: pg_cursor) -> di
              parse_date(record.get('release_date')))
             for record in records
         ]
-        query = "INSERT INTO track (track_name, url, art_url, release_date) VALUES %s RETURNING track_id, url"
+        query = "INSERT INTO track (track_name, url, art_url, release_date) VALUES %s ON CONFLICT DO NOTHING RETURNING track_id, url"
 
     elif content_type == 'album':
         values = [
@@ -182,7 +185,7 @@ def insert_content(df: pd.DataFrame, content_type: str, cursor: pg_cursor) -> di
              parse_date(record.get('release_date')))
             for record in records
         ]
-        query = "INSERT INTO album (album_name, url, art_url, release_date) VALUES %s RETURNING album_id, url"
+        query = "INSERT INTO album (album_name, url, art_url, release_date) VALUES %s ON CONFLICT DO NOTHING RETURNING album_id, url"
 
     elif content_type == 'merchandise':
         values = [
@@ -192,7 +195,7 @@ def insert_content(df: pd.DataFrame, content_type: str, cursor: pg_cursor) -> di
              parse_date(record.get('release_date')))
             for record in records
         ]
-        query = "INSERT INTO merchandise (merchandise_name, url, art_url, release_date) VALUES %s RETURNING merchandise_id, url"
+        query = "INSERT INTO merchandise (merchandise_name, url, art_url, release_date) VALUES %s ON CONFLICT DO NOTHING RETURNING merchandise_id, url"
 
     else:
         return {}
@@ -215,7 +218,7 @@ def insert_artist_assignments(df: pd.DataFrame, content_type: str, existing: dic
     if values:
         execute_values(
             cursor,
-            f"INSERT INTO artist_{content_type}_assignment (artist_id, {content_type}_id) VALUES %s",
+            f"INSERT INTO artist_{content_type}_assignment (artist_id, {content_type}_id) VALUES %s ON CONFLICT DO NOTHING",
             values
         )
 
@@ -253,18 +256,18 @@ def insert_sales_and_assignments(sales: pd.DataFrame, existing: dict, cursor: pg
         url = row['url']
 
         if row['slug_type'] == 't' and url in existing['track']:
-            cursor.execute("INSERT INTO sale_track_assignment (track_id, sale_id, sold_for) VALUES (%s, %s, %s)",
+            cursor.execute("INSERT INTO sale_track_assignment (track_id, sale_id, sold_for) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING",
                            (existing['track'][url], sale_id,
                             float(row['sold_for']) if pd.notna(
                                row.get('sold_for')) else None
                             ))
         elif row['slug_type'] == 'a' and url in existing['album']:
-            cursor.execute("INSERT INTO sale_album_assignment (album_id, sale_id, sold_for) VALUES (%s, %s, %s)",
+            cursor.execute("INSERT INTO sale_album_assignment (album_id, sale_id, sold_for) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING",
                            (existing['album'][url], sale_id,
                             float(row['sold_for']) if pd.notna(
                                row.get('sold_for')) else None))
         elif row['slug_type'] == 'p' and url in existing['merchandise']:
-            cursor.execute("INSERT INTO sale_merchandise_assignment (merchandise_id, sale_id, sold_for) VALUES (%s, %s, %s)",
+            cursor.execute("INSERT INTO sale_merchandise_assignment (merchandise_id, sale_id, sold_for) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING",
                            (existing['merchandise'][url], sale_id,
                             float(row['sold_for']) if pd.notna(
                                row.get('sold_for')) else None))
@@ -302,14 +305,13 @@ def upload_to_db(dataframe: pd.DataFrame, conn: connection) -> None:
         merch_map = insert_content(
             content_dfs['merchandise'], 'merchandise', cursor)
 
-        existing.update({
-            'country': country_map,
-            'artist': artist_map,
-            'tag': tag_map,
-            'track': track_map,
-            'album': album_map,
-            'merchandise': merch_map
-        })
+        existing['country'].update(country_map)
+        existing['artist'].update(artist_map)
+        existing['tag'].update(tag_map)
+        existing['track'].update(track_map)
+        existing['album'].update(album_map)
+        existing['merchandise'].update(merch_map)
+
         insert_artist_assignments(
             content_dfs['track'], 'track', existing, cursor)
         insert_artist_assignments(
