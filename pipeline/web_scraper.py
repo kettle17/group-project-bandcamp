@@ -26,7 +26,7 @@ def filter_tags(tags: list[str], logger) -> list[str]:
 def get_relevant_html(url: str, logger) -> Tag:
     """Returns the html element containing details on release date and tags."""
 
-    logger.info("Retrieving page to be scraped from ' %s'", url)
+    logger.info("Retrieving page to be scraped from '%s'", url)
     page = requests.get(url, timeout=5)
     soup = BeautifulSoup(page.content, "html.parser")
     results = soup.find(id="pgBd")

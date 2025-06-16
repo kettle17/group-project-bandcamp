@@ -35,6 +35,7 @@ CREATE TABLE tag (
 CREATE TABLE merchandise (
     merchandise_id BIGINT GENERATED ALWAYS AS IDENTITY,
     merchandise_name VARCHAR(255),
+    release_date DATE,
     art_url VARCHAR(255),
     url VARCHAR(255) NOT NULL,
     sold_for DECIMAL NOT NULL,
@@ -54,7 +55,7 @@ CREATE TABLE album (
 CREATE TABLE track (
     track_id BIGINT GENERATED ALWAYS AS IDENTITY,
     track_name TEXT NOT NULL,
-    release_date DATE NOT NULL,
+    release_date DATE,
     art_url VARCHAR(255),
     url VARCHAR(255) NOT NULL,
     sold_for DECIMAL NOT NULL,
@@ -174,3 +175,4 @@ ALTER SEQUENCE artist_album_assignment_artist_album_assignment_id_seq RESTART WI
 ALTER SEQUENCE artist_track_assignment_artist_track_assignment_id_seq RESTART WITH 1;
 ALTER SEQUENCE track_tag_assignment_track_tag_assignment_id_seq RESTART WITH 1;
 ALTER SEQUENCE album_tag_assignment_album_tag_assignment_id_seq RESTART WITH 1;
+
