@@ -292,7 +292,7 @@ def upload_to_db(dataframe: pd.DataFrame, conn: connection) -> None:
 
 
 def run_load(dataframe: pd.DataFrame = None, csv_path: str = None) -> None:
-"""Runs the functions required for the load portion of the ETL pipeline in succession."""
+    """Runs the functions required for the load portion of the ETL pipeline in succession."""
     set_logger()
     logger = get_logger()
 
