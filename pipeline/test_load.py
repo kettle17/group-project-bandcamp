@@ -16,8 +16,8 @@ from load import (
     extract_tags,
     get_existing_entities,
     remove_existing_rows,
-    insert_entities, 
-    insert_tags, 
+    insert_entities,
+    insert_tags,
     insert_content,
     run_load
 )
@@ -42,35 +42,50 @@ class TestGetDbConnection:
 
 
 class TestParseTagList:
+    """Tests that tags are correctly parsed."""
+
     def test_parse_valid_string(self):
+        """Test that a valid string is parsed correctly."""
+        """Tests that tags are correctly parsed."""
         raw = "['jungle', 'dnb', 'raggatek']"
         assert parse_tag_list(raw) == ['jungle', 'dnb', 'raggatek']
 
     def test_empty_string(self):
+        """Tests that an empty list is returned if the srting is empty."""
         assert parse_tag_list('') == []
 
     def test_not_a_string(self):
+        """Tests that if item is not a string, return empty list."""
         assert parse_tag_list(None) == []
 
     def test_malformed_list(self):
+        """Tests that if the string is malformed, it still returns the correct list."""
         assert parse_tag_list("[raggatek,jungle]") == ['raggatek', 'jungle']
 
 
 class TestExtractTags:
+    """Tests for extracting the tags."""
+
     def test_basic_tags(self):
-        df = pd.Series(["['jungle', 'dnb', 'raggatek']", "['korean dancehall']", None, "['jungle', 'Korean Dancehall']"])
+        """Tests for basic tags returning the correct list."""
+        df = pd.Series(["['jungle', 'dnb', 'raggatek']",
+                       "['korean dancehall']", None, "['jungle', 'Korean Dancehall']"])
         expected = ['dnb', 'jungle', 'korean dancehall', 'raggatek']
         assert extract_tags(df) == expected
 
     def test_empty_and_malformed(self):
-        df = pd.Series([None, '', '[]', "[raggatek,jungle]", "['jungle', 'dnb']"])
+        """Tests for incorrect tags returning correct list."""
+        df = pd.Series(
+            [None, '', '[]', "[raggatek,jungle]", "['jungle', 'dnb']"])
         expected = ['dnb', 'jungle', 'raggatek']
         assert extract_tags(df) == expected
 
     def test_whitespace_and_case(self):
+        """Tests for tags with whitespaces and uppercased."""
         df = pd.Series(["[' jungle ', 'DNB']", "['Korean Dancehall', ' dnb']"])
         expected = ['dnb', 'jungle', 'korean dancehall']
         assert extract_tags(df) == expected
+
 
 class TestLoadSalesCsv:
     """Test class for load_sales_csv function."""
@@ -78,6 +93,7 @@ class TestLoadSalesCsv:
     @patch("load.pd.read_csv")
     @patch("load.get_logger")
     def test_loads_csv_and_logs(self, mock_get_logger, mock_read_csv):
+        """Tests that load_csv loads the csv data into repo."""
         mock_logger = MagicMock()
         mock_get_logger.return_value = mock_logger
         expected_df = pd.DataFrame({'a': [1, 2, 3]})
@@ -85,7 +101,8 @@ class TestLoadSalesCsv:
 
         df = load_sales_csv()
 
-        mock_read_csv.assert_called_once_with('data/clean_sales3.csv', parse_dates=['utc_date'])
+        mock_read_csv.assert_called_once_with(
+            'data/clean_sales3.csv', parse_dates=['utc_date'])
         mock_logger.info.assert_called_once_with("Loading sales CSV data...")
         assert df.equals(expected_df)
 
@@ -94,6 +111,7 @@ class TestGetFiltered:
     """Test class for get_filtered function."""
 
     def test_filters_correctly(self):
+        """Tests that the filters return the correct values."""
         data = {
             'slug_type': ['t', 'a', 'p', 't', 'a'],
             'item_type': ['t', 'a', 'p', 't', 'p'],
@@ -104,10 +122,12 @@ class TestGetFiltered:
 
         assert set(filtered.keys()) == {'track', 'album', 'merchandise'}
 
-        expected_track = df[(df['slug_type'] == 't') & (df['item_type'] == 't')]
+        expected_track = df[(df['slug_type'] == 't') &
+                            (df['item_type'] == 't')]
         assert filtered['track'].equals(expected_track)
 
-        expected_album = df[(df['slug_type'] == 'a') & (df['item_type'].isin(['a', 'p']))]
+        expected_album = df[(df['slug_type'] == 'a') &
+                            (df['item_type'].isin(['a', 'p']))]
         assert filtered['album'].equals(expected_album)
 
         expected_merch = df[df['slug_type'] == 'p']
@@ -128,8 +148,10 @@ class TestGetExistingEntities:
         cursor = MagicMock()
         cursor.fetchall.side_effect = [
             [{'country_id': 44, 'country_name': 'United Kingdom'}],
-            [{'artist_id': 101, 'artist_name': 'Halogenix'}, {'artist_id': 202, 'artist_name': 'Molecular'}, {'artist_id': 303, 'artist_name': 'LTJ Bukem'}],
-            [{'tag_id': 1001, 'tag_name': 'drum and bass'}, {'tag_id': 1002, 'tag_name': 'liquid funk'}],
+            [{'artist_id': 101, 'artist_name': 'Halogenix'}, {'artist_id': 202,
+                                                              'artist_name': 'Molecular'}, {'artist_id': 303, 'artist_name': 'LTJ Bukem'}],
+            [{'tag_id': 1001, 'tag_name': 'drum and bass'}, {
+                'tag_id': 1002, 'tag_name': 'liquid funk'}],
             [{'track_id': 5555, 'url': 'halogenix-track-1'}],
             [{'album_id': 6666, 'url': 'molecular-album-1'}],
             [{'merchandise_id': 7777, 'url': 'trex-merch-1'}],
@@ -170,6 +192,7 @@ class TestInsertEntities:
     """Tests for the insert_entities function."""
     @patch('load.execute_values')
     def test_inserts_entities_and_returns_mapping(self, mock_execute_values):
+        """Tests that insert_entities returns the correct mapping."""
         mock_cursor = MagicMock()
         mock_cursor.fetchall.return_value = [
             {'country_name': 'UK', 'country_id': 1},
@@ -183,6 +206,7 @@ class TestInsertEntities:
         assert result == {'UK': 1, 'FR': 2}
 
     def test_returns_empty_dict_when_no_values(self):
+        """Tests that insert_entites returns nothing if there are no values."""
         mock_cursor = MagicMock()
         df = pd.DataFrame({'country_name': []})
 
@@ -195,8 +219,10 @@ class TestInsertTags:
     """Tests for the insert_tags function."""
     @patch('load.execute_values')
     def test_inserts_tags_and_returns_mapping(self, mock_execute_values):
+        """Tests insert_tags returns the correct mapping."""
         mock_cursor = MagicMock()
-        df = pd.DataFrame({'tag_names': ["['jungle', 'drum and bass']", "['liquid']"]})
+        df = pd.DataFrame(
+            {'tag_names': ["['jungle', 'drum and bass']", "['liquid']"]})
         mock_cursor.fetchall.return_value = [
             {'tag_name': 'jungle', 'tag_id': 99},
             {'tag_name': 'drum and bass', 'tag_id': 111},
@@ -209,6 +235,7 @@ class TestInsertTags:
         assert result == {'jungle': 99, 'drum and bass': 111, 'liquid': 42}
 
     def test_returns_empty_dict_when_no_tags(self):
+        """Tests that insert_tags returns an empty dict if there are no tags."""
         mock_cursor = MagicMock()
         df = pd.DataFrame({'tag_names': []})
 
@@ -221,10 +248,13 @@ class TestInsertContent:
     """Tests for the insert_content"""
     @patch('load.execute_values')
     def test_inserts_tracks_and_returns_url_id_mapping(self, mock_execute_values):
+        """Tests that insert_content returns the correct id mapping."""
         mock_cursor = MagicMock()
         df = pd.DataFrame([
-            {'item_description': 'Track 1', 'url': 'url1', 'art_url': None, 'sold_for': 5.0, 'release_date': '2023-01-01'},
-            {'item_description': 'Track 2', 'url': 'url2', 'art_url': None, 'sold_for': None, 'release_date': None},
+            {'item_description': 'Track 1', 'url': 'url1', 'art_url': None,
+                'sold_for': 5.0, 'release_date': '2023-01-01'},
+            {'item_description': 'Track 2', 'url': 'url2',
+                'art_url': None, 'sold_for': None, 'release_date': None},
         ])
         mock_cursor.fetchall.return_value = [
             {'url': 'url1', 'track_id': 100},
@@ -236,19 +266,20 @@ class TestInsertContent:
         mock_execute_values.assert_called_once()
         assert result == {'url1': 100, 'url2': 101}
 
-
     def test_returns_empty_dict_with_unknown_content_type(self):
+        """Tests that insert_content returns an empty dict if content type is unknown."""
         mock_cursor = MagicMock()
         df = pd.DataFrame([
-            {'item_description': 'Item', 'url': 'url', 'art_url': None, 'sold_for': 10.0}
+            {'item_description': 'Item', 'url': 'url',
+                'art_url': None, 'sold_for': 10.0}
         ])
 
         result = insert_content(df, 'unknown', mock_cursor)
 
         assert result == {}
 
-
     def test_returns_empty_dict_with_empty_df(self):
+        """Tests that insert_content returns an empty dict if the dataframe is empty."""
         mock_cursor = MagicMock()
         df = pd.DataFrame([])
 
@@ -281,7 +312,8 @@ class TestUploadToDb:
 
         upload_to_db(df, mock_conn)
 
-        mock_logger.info.assert_called_with("Empty dataframe received, nothing to upload.")
+        mock_logger.info.assert_called_with(
+            "Empty dataframe received, nothing to upload.")
         mock_conn.cursor().execute.assert_not_called()
 
     @patch("load.get_logger")
@@ -301,13 +333,15 @@ class TestUploadToDb:
         })
         mock_conn = MagicMock()
         mock_cursor = mock_conn.cursor.return_value
-        mock_cursor.execute.side_effect = psycopg2.DatabaseError("DB insertion failed")
+        mock_cursor.execute.side_effect = psycopg2.DatabaseError(
+            "DB insertion failed")
 
         with pytest.raises(psycopg2.DatabaseError):
             upload_to_db(df, mock_conn)
 
         mock_conn.rollback.assert_called_once()
         mock_logger.error.assert_called()
+
 
 class TestRunLoad:
     """Test class for run_load function."""
@@ -347,7 +381,7 @@ class TestRunLoad:
         run_load(csv_path="valid.csv")
 
         mock_exists.assert_called_once_with("valid.csv")
-        mock_read_csv.assert_called_once_with("valid.csv", parse_dates=['utc_date'])
+        mock_read_csv.assert_called_once_with(
+            "valid.csv", parse_dates=['utc_date'])
         mock_get_conn.assert_called_once()
         mock_upload.assert_called_once_with(mock_df, mock_conn)
-    
