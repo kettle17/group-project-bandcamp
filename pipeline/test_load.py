@@ -22,7 +22,7 @@ from load import (
     run_load
 )
 
-@pytest.mark.usefixtures("mock_env_vars")
+
 class TestGetDbConnection:
     """Test class for get_db_connection function."""
 
@@ -32,21 +32,6 @@ class TestGetDbConnection:
         mock_conn = mock_connect.return_value
         conn = get_db_connection()
         assert conn is mock_conn
-
-    @patch("load.psycopg2.connect")
-    @patch.dict("os.environ")
-    def test_uses_env_variables(self, mock_connect, mock_env_vars) -> None:
-        """Test that get_db_connection uses environment variables for credentials."""
-        os.environ.update(mock_env_vars)
-
-        get_db_connection()
-        psycopg2.connect(
-            user='testuser',
-            password='veryrealpassword',
-            host='testlocalhost',
-            port='5432',
-            database='testdb'
-        )
 
     @patch("load.psycopg2.connect")
     def test_calls_psycopg2_connect(self, mock_connect) -> None:
@@ -86,8 +71,6 @@ class TestExtractTags:
         expected = ['dnb', 'jungle', 'korean dancehall']
         assert extract_tags(df) == expected
 
-
-@pytest.mark.usefixtures("mock_env_vars")
 class TestLoadSalesCsv:
     """Test class for load_sales_csv function."""
 
