@@ -69,7 +69,8 @@ def get_existing_entities(cursor, sales: pd.DataFrame, content_dfs: dict[str, pd
         (country_names,)
     )
 
-    existing['country'] = {row['country_name']: row['country_id'] for row in cursor.fetchall()}
+    existing['country'] = {row['country_name']
+        : row['country_id'] for row in cursor.fetchall()}
 
     all_artists = pd.concat(content_dfs.values(), ignore_index=True)
     artist_names = all_artists['artist_name'].dropna().unique().tolist()
@@ -168,36 +169,30 @@ def insert_content(df: pd.DataFrame, content_type: str, cursor: pg_cursor) -> di
             (record.get('item_description') or 'Unknown Track',
              record['url'],
              record.get('art_url'),
-             float(record['sold_for']) if pd.notna(
-                 record.get('sold_for')) else None,
              parse_date(record.get('release_date')))
             for record in records
         ]
-        query = "INSERT INTO track (track_name, url, art_url, sold_for, release_date) VALUES %s RETURNING track_id, url"
+        query = "INSERT INTO track (track_name, url, art_url, release_date) VALUES %s RETURNING track_id, url"
 
     elif content_type == 'album':
         values = [
             (record.get('album_title') or record.get('item_description') or 'Unknown Album',
              record['url'],
              record.get('art_url'),
-             float(record['sold_for']) if pd.notna(
-                 record.get('sold_for')) else None,
              parse_date(record.get('release_date')))
             for record in records
         ]
-        query = "INSERT INTO album (album_name, url, art_url, sold_for, release_date) VALUES %s RETURNING album_id, url"
+        query = "INSERT INTO album (album_name, url, art_url, release_date) VALUES %s RETURNING album_id, url"
 
     elif content_type == 'merchandise':
         values = [
             (record.get('item_description') or 'Unknown Item',
              record['url'],
              record.get('art_url'),
-             float(record['sold_for']) if pd.notna(
-                 record.get('sold_for')) else None,
              parse_date(record.get('release_date')))
             for record in records
         ]
-        query = "INSERT INTO merchandise (merchandise_name, url, art_url, sold_for, release_date) VALUES %s RETURNING merchandise_id, url"
+        query = "INSERT INTO merchandise (merchandise_name, url, art_url, release_date) VALUES %s RETURNING merchandise_id, url"
 
     else:
         return {}
@@ -258,14 +253,21 @@ def insert_sales_and_assignments(sales: pd.DataFrame, existing: dict, cursor: pg
         url = row['url']
 
         if row['slug_type'] == 't' and url in existing['track']:
-            cursor.execute("INSERT INTO sale_track_assignment (track_id, sale_id) VALUES (%s, %s)",
-                           (existing['track'][url], sale_id))
+            cursor.execute("INSERT INTO sale_track_assignment (track_id, sale_id, sold_for) VALUES (%s, %s, %s)",
+                           (existing['track'][url], sale_id,
+                            float(row['sold_for']) if pd.notna(
+                               row.get('sold_for')) else None
+                            ))
         elif row['slug_type'] == 'a' and url in existing['album']:
-            cursor.execute("INSERT INTO sale_album_assignment (album_id, sale_id) VALUES (%s, %s)",
-                           (existing['album'][url], sale_id))
+            cursor.execute("INSERT INTO sale_album_assignment (album_id, sale_id, sold_for) VALUES (%s, %s, %s)",
+                           (existing['album'][url], sale_id,
+                            float(row['sold_for']) if pd.notna(
+                               row.get('sold_for')) else None))
         elif row['slug_type'] == 'p' and url in existing['merchandise']:
-            cursor.execute("INSERT INTO sale_merchandise_assignment (merchandise_id, sale_id) VALUES (%s, %s)",
-                           (existing['merchandise'][url], sale_id))
+            cursor.execute("INSERT INTO sale_merchandise_assignment (merchandise_id, sale_id, sold_for) VALUES (%s, %s, %s)",
+                           (existing['merchandise'][url], sale_id,
+                            float(row['sold_for']) if pd.notna(
+                               row.get('sold_for')) else None))
 
 
 def upload_to_db(dataframe: pd.DataFrame, conn: connection) -> None:

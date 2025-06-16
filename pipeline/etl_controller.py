@@ -17,11 +17,8 @@ def run_pipeline() -> None:
 
     try:
         logger.info("Extracting...")
-        run_extract('data/output.csv')
-
-        logger.info("Transforming...")
-        raw_df = pd.read_csv('data/output.csv')
-        clean_df = clean_dataframe(raw_df)
+        extract_df = run_extract(None)
+        clean_df = clean_dataframe(extract_df)
 
         logger.info("Loading...")
         run_load(clean_df)

@@ -38,7 +38,6 @@ CREATE TABLE merchandise (
     release_date DATE,
     art_url VARCHAR(255),
     url VARCHAR(255) NOT NULL,
-    sold_for DECIMAL NOT NULL,
     PRIMARY KEY (merchandise_id)
 );
 
@@ -48,7 +47,6 @@ CREATE TABLE album (
     release_date DATE,
     art_url VARCHAR(255),
     url VARCHAR(255) NOT NULL,
-    sold_for DECIMAL NOT NULL,
     PRIMARY KEY (album_id)
 );
 
@@ -58,7 +56,6 @@ CREATE TABLE track (
     release_date DATE,
     art_url VARCHAR(255),
     url VARCHAR(255) NOT NULL,
-    sold_for DECIMAL NOT NULL,
     PRIMARY KEY (track_id)
 );
 
@@ -77,6 +74,7 @@ CREATE TABLE sale_merchandise_assignment (
     merchandise_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
     merchandise_id BIGINT NOT NULL,
     sale_id BIGINT NOT NULL,
+    sold_for DECIMAL NOT NULL,
     PRIMARY KEY (merchandise_assignment_id),
     FOREIGN KEY (merchandise_id) REFERENCES merchandise (merchandise_id),
     FOREIGN key (sale_id) REFERENCES sale (sale_id)
@@ -88,6 +86,7 @@ CREATE TABLE sale_album_assignment (
     album_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
     album_id BIGINT NOT NULL,
     sale_id BIGINT NOT NULL,
+    sold_for DECIMAL NOT NULL,
     PRIMARY KEY (album_assignment_id),
     FOREIGN KEY (album_id) REFERENCES album (album_id),
     FOREIGN key (sale_id) REFERENCES sale (sale_id)
@@ -99,6 +98,7 @@ CREATE TABLE sale_track_assignment (
     track_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
     track_id BIGINT NOT NULL,
     sale_id BIGINT NOT NULL,
+    sold_for DECIMAL NOT NULL,
     PRIMARY KEY (track_assignment_id),
     FOREIGN KEY (track_id) REFERENCES track (track_id),
     FOREIGN key (sale_id) REFERENCES sale (sale_id)
