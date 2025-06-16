@@ -8,7 +8,8 @@ We will also use a web scraper to gain additional data such as tag data and rele
 ### ETL Scripts
 - `extract.py` – Extracts Bandcamp sales data and saves to CSV  
 - `transform.py` – Cleans and transforms data for loading  
-- `load.py` – Loads transformed data into an RDS database  
+- `load.py` – Loads transformed data into an RDS database 
+- `etl_controller.py` - Runs all stages of the ETL pipeline (contains Lambda Handler).
 
 ### Tests
 - `test_exist.py` – Test that checks existence of `extract.py`. Ensures pytest succeeds if there are no other tests. 
