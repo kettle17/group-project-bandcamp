@@ -12,6 +12,7 @@ from utilities import get_logger, set_logger
 
 
 def get_db_connection() -> connection:
+    """Returns a psycopg2 connection."""
     load_dotenv('.env')
     return psycopg2.connect(
         user=os.environ["DB_USER"],
