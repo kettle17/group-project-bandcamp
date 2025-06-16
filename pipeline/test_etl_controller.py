@@ -8,21 +8,16 @@ from etl_controller import (run_pipeline, etl_lambda_handler)
 
 class TestPipeline:
     """Tests for the ETL pipeline."""
-
     @patch("etl_controller.run_load")
     @patch("etl_controller.clean_dataframe")
-    @patch("etl_controller.pd.read_csv")
     @patch("etl_controller.run_extract")
-    def test_run_pipeline(self, mock_extract, mock_read_csv, mock_clean, mock_load):
+    def test_run_pipeline(self, mock_extract, mock_clean, mock_load):
         """Tests that each part of the etl pipeline is called at least once."""
         mock_df = MagicMock()
-        mock_read_csv.return_value = mock_df
+        mock_extract.return_value = mock_df
         mock_clean.return_value = mock_df
-
         run_pipeline()
-
-        mock_extract.assert_called_once_with('data/output.csv')
-        mock_read_csv.assert_called_once_with('data/output.csv')
+        mock_extract.assert_called_once_with(None)
         mock_clean.assert_called_once_with(mock_df)
         mock_load.assert_called_once_with(mock_df)
 
