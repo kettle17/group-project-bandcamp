@@ -96,3 +96,5 @@ pycache/*
 .csv
 .parquet
 .coverage
+
+htmlcov/
