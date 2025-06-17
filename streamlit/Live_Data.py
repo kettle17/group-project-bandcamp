@@ -35,6 +35,12 @@ def get_connection(host, dbname, user, password, port):
     return connection
 
 
+def run_query(_conn, query):
+    """Loads the required data by querying the database."""
+    df = pd.read_sql(query, _conn)
+    return df
+
+
 def load_sale_data(_conn):
     """Loads the required data by querying the database."""
     query = """SELECT s.*, c.*, a.*, ar.* FROM sale s
@@ -44,7 +50,6 @@ def load_sale_data(_conn):
     LEFT JOIN artist_album_assignment aaa USING(album_id)
     LEFT JOIN artist ar USING(artist_id);"""
     df = pd.read_sql(query, _conn)
-    _conn.close()
     return df
 
 
@@ -79,6 +84,22 @@ if __name__ == "__main__":
     )
     sale_df = load_sale_data(conn)
 
+    left_co, cent_co, last_co = st.columns(3)
+    with cent_co:
+        st.markdown("### Average Transaction Values")
+
+    avg_track_sale = run_query(conn,
+                               "SELECT ROUND(AVG(sold_for), 2) FROM sale_track_assignment")
+    avg_album_sale = run_query(conn,
+                               "SELECT ROUND(AVG(sold_for), 2) FROM sale_album_assignment")
+    avg_merch_sale = run_query(conn,
+                               "SELECT ROUND(AVG(sold_for), 2) FROM sale_merchandise_assignment")
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Avg Track Sale", f"${avg_track_sale}")
+    col2.metric("Avg Album Sale", f"${avg_album_sale}")
+    col3.metric("Avg Merchandise Sale", f"${avg_merch_sale}")
+
     st.subheader("🔍 Filters")
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -110,3 +131,5 @@ if __name__ == "__main__":
 
     geo_df = geocode_countries(sale_df)
     st.map(geo_df, size=20, color="#0044ff")
+
+    conn.close()
