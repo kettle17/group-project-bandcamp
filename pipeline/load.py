@@ -69,7 +69,7 @@ def get_existing_entities(cursor, sales: pd.DataFrame, content_dfs: dict[str, pd
         (country_names,)
     )
 
-    existing['country'] = {row['country_name']                           : row['country_id'] for row in cursor.fetchall()}
+    existing['country'] = {row['country_name']: row['country_id'] for row in cursor.fetchall()}
 
     all_artists = pd.concat(content_dfs.values(), ignore_index=True)
     artist_names = all_artists['artist_name'].dropna().unique().tolist()
