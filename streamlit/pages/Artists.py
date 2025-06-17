@@ -15,7 +15,6 @@ def load_album_data(_conn):
     LEFT JOIN artist ar USING(artist_id);
     """
     df = pd.read_sql(query, _conn)
-    _conn.close()
     return df
 
 
@@ -63,3 +62,4 @@ if __name__ == "__main__":
                 """,
                 unsafe_allow_html=True
             )
+    conn.close()

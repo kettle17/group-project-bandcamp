@@ -48,7 +48,7 @@ def load_sale_data(_conn):
 
 @st.cache_data
 def geocode_countries(df):
-    geolocator = Nominatim(user_agent="bandcamp-map")
+    geolocator = Nominatim(user_agent="bandcamp-map", timeout=10)
     locations = []
 
     for country in df['country_name'].dropna().unique():
@@ -62,6 +62,7 @@ def geocode_countries(df):
 
 if __name__ == "__main__":
     local_css("style.css")
+
     left_co, cent_co, last_co = st.columns(3)
     with cent_co:
         st.image("Tracktion (1).png")
@@ -76,19 +77,27 @@ if __name__ == "__main__":
     sale_df = load_sale_data(conn)
 
     st.subheader("🔍 Filters")
-    country_options = sale_df['country_name'].dropna().unique()
-    selected_countries = st.multiselect(
-        "Country", options=country_options, default=None)
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        country_options = sale_df['country_name'].dropna().unique()
+        selected_countries = st.multiselect(
+            "Country", options=country_options, default=None)
+    with col2:
+        artist_options = sale_df['artist_name'].dropna().unique()
+        selected_artists = st.multiselect(
+            "Artist", options=artist_options, default=None)
 
-    artist_options = sale_df['artist_name'].dropna().unique()
-    selected_artists = st.multiselect(
-        "Artist", options=artist_options, default=None)
+    with col3:
+        sale_df['utc_date'] = pd.to_datetime(sale_df['utc_date'])
+        start_date, end_date = st.date_input(
+            "Sale Date Range",
+            [sale_df['utc_date'].min(), sale_df['utc_date'].max()]
+        )
+        start_date = pd.to_datetime(start_date)
+        end_date = pd.to_datetime(end_date)
 
-    sale_df['utc_date'] = pd.to_datetime(sale_df['utc_date'])
-    start_date, end_date = st.date_input(
-        "Sale Date Range",
-        [sale_df['utc_date'].min(), sale_df['utc_date'].max()]
-    )
+        filtered_df = sale_df[sale_df['utc_date'].between(
+            start_date, end_date)]
 
     filtered_df = sale_df[
         (sale_df['country_name'].isin(selected_countries)) &
