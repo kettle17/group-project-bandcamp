@@ -69,8 +69,7 @@ def get_existing_entities(cursor, sales: pd.DataFrame, content_dfs: dict[str, pd
         (country_names,)
     )
 
-    existing['country'] = {row['country_name']
-        : row['country_id'] for row in cursor.fetchall()}
+    existing['country'] = {row['country_name']: row['country_id'] for row in cursor.fetchall()}
 
     all_artists = pd.concat(content_dfs.values(), ignore_index=True)
     artist_names = all_artists['artist_name'].dropna().unique().tolist()
@@ -176,12 +175,16 @@ def insert_content(df: pd.DataFrame, content_type: str, cursor: pg_cursor) -> di
 
     elif content_type == 'album':
         values = [
-            (record.get('album_title') or record.get('item_description') or 'Unknown Album',
-             record['url'],
-             record.get('art_url'),
-             parse_date(record.get('release_date')))
+            (
+                record.get('album_name') if record.get('item_type') == 'p'
+                else (record.get('album_title') or record.get('item_description') or 'Unknown Album'),
+                record['url'],
+                record.get('art_url'),
+                parse_date(record.get('release_date'))
+            )
             for record in records
         ]
+
         query = "INSERT INTO album (album_name, url, art_url, release_date) VALUES %s RETURNING album_id, url"
 
     elif content_type == 'merchandise':
@@ -196,7 +199,6 @@ def insert_content(df: pd.DataFrame, content_type: str, cursor: pg_cursor) -> di
 
     else:
         return {}
-
     if values:
         logger.info(f"Inserting {content_type}s...")
         execute_values(cursor, query, values)
@@ -259,10 +261,21 @@ def insert_sales_and_assignments(sales: pd.DataFrame, existing: dict, cursor: pg
                                row.get('sold_for')) else None
                             ))
         elif row['slug_type'] == 'a' and url in existing['album']:
-            cursor.execute("INSERT INTO sale_album_assignment (album_id, sale_id, sold_for) VALUES (%s, %s, %s)",
-                           (existing['album'][url], sale_id,
-                            float(row['sold_for']) if pd.notna(
-                               row.get('sold_for')) else None))
+            if row['item_type'] == 'a':
+                cursor.execute(
+                    "INSERT INTO sale_album_assignment (album_id, sale_id, sold_for, is_physical) VALUES (%s, %s, %s, %s)",
+                    (existing['album'][url], sale_id,
+                        float(row['sold_for']) if pd.notna(
+                            row.get('sold_for')) else None,
+                        False))
+            else:
+                cursor.execute(
+                    "INSERT INTO sale_album_assignment (album_id, sale_id, sold_for, is_physical) VALUES (%s, %s, %s, %s)",
+                    (existing['album'][url], sale_id,
+                        float(row['sold_for']) if pd.notna(
+                            row.get('sold_for')) else None,
+                        True))
+
         elif row['slug_type'] == 'p' and url in existing['merchandise']:
             cursor.execute("INSERT INTO sale_merchandise_assignment (merchandise_id, sale_id, sold_for) VALUES (%s, %s, %s)",
                            (existing['merchandise'][url], sale_id,

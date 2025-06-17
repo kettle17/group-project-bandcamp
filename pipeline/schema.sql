@@ -82,11 +82,12 @@ CREATE TABLE sale_merchandise_assignment (
 
 
 CREATE TABLE sale_album_assignment (
-
+    
     album_assignment_id BIGINT GENERATED ALWAYS AS IDENTITY,
     album_id BIGINT NOT NULL,
     sale_id BIGINT NOT NULL,
     sold_for DECIMAL NOT NULL,
+    is_physical BOOLEAN NOT NULL,
     PRIMARY KEY (album_assignment_id),
     FOREIGN KEY (album_id) REFERENCES album (album_id),
     FOREIGN key (sale_id) REFERENCES sale (sale_id)
