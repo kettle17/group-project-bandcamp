@@ -18,6 +18,7 @@ st.set_page_config(
 
 
 def local_css(file_name):
+    """Connects to the style.css script to add a font."""
     with open(file_name) as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
@@ -35,6 +36,7 @@ def get_connection(host, dbname, user, password, port):
 
 
 def load_sale_data(_conn):
+    """Loads the required data by querying the database."""
     query = """SELECT s.*, c.*, a.*, ar.* FROM sale s
     LEFT JOIN country c USING(country_id)
     LEFT JOIN sale_album_assignment saa USING(sale_id)
@@ -48,6 +50,7 @@ def load_sale_data(_conn):
 
 @st.cache_data
 def geocode_countries(df):
+    """Loads every country into a dataframe to use on the map visualisation."""
     geolocator = Nominatim(user_agent="bandcamp-map", timeout=10)
     locations = []
 
