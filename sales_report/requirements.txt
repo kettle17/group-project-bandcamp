@@ -1,6 +1,6 @@
 psycopg2-binary
 python-dotenv
-xhtml2pdf
+fpdf
 pandas
 ipykernel
 altair[all]

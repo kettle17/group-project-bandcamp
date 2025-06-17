@@ -2,6 +2,8 @@
 and generates a pdf report."""
 
 from os import environ as ENV
+from datetime import date
+
 from dotenv import load_dotenv
 import psycopg2
 from psycopg2.extensions import connection
@@ -9,6 +11,7 @@ from psycopg2.extras import RealDictCursor
 import pandas as pd
 from pandas import DataFrame
 import altair as alt
+from fpdf import FPDF
 
 
 def get_db_connection() -> connection:
@@ -49,7 +52,7 @@ def get_top_artists_by_album_sales(conn):
 def get_top_artists_by_album_chart(df: DataFrame):
     """Returns a bar chart showing top 10 artists. """
 
-    chart_top_artists = alt.Chart(df).mark_bar().encode(
+    chart_top_artists = alt.Chart(df, title="Top 10 Artists by Album Revenue").mark_bar().encode(
         x=alt.X('total_revenue:Q', title="Total Revenue"),
         y=alt.Y("artist_name:N", sort="-x", title="Artist Name"),
         tooltip=["artist_name", "total_revenue"],
@@ -84,7 +87,7 @@ def get_top_artists_by_track_sales(conn):
 
 def get_top_artists_by_tracks_chart(df):
 
-    top_artists_by_tracks = alt.Chart(df).mark_bar().encode(
+    top_artists_by_tracks = alt.Chart(df, title="Top 10 Artists by Track Revenue").mark_bar().encode(
         x=alt.X('total_revenue:Q', title="Total Revenue"),
         y=alt.Y("artist_name:N", sort="-x", title="Artist Name"),
         tooltip=["artist_name", "total_revenue"],
@@ -117,7 +120,7 @@ def get_top_genres_by_album_sales(conn):
 
 def get_top_genres_by_album_chart(df):
     """Returns a bar chart showing top genres by album sales."""
-    top_genres_by_albums = alt.Chart(df).mark_bar().encode(
+    top_genres_by_albums = alt.Chart(df, title="Top 10 Genres by Album Revenue").mark_bar().encode(
         x=alt.X('total_revenue:Q', title="Total Revenue"),
         y=alt.Y("tag_name:N", sort="-x", title="Genre"),
         tooltip=["tag_name", "total_revenue"],
@@ -152,7 +155,7 @@ def get_top_genres_by_track_sales(conn):
 def get_top_genres_by_track_chart(df):
     """Returns a bar chart showing top genres by track sales."""
 
-    top_genres_by_tracks = alt.Chart(df).mark_bar().encode(
+    top_genres_by_tracks = alt.Chart(df, title="Top 10 Genres by Track Revenue").mark_bar().encode(
         x=alt.X('total_revenue:Q', title="Total Revenue"),
         y=alt.Y("tag_name:N", sort="-x", title="Genre"),
         tooltip=["tag_name", "total_revenue"],
@@ -163,7 +166,7 @@ def get_top_genres_by_track_chart(df):
     return top_genres_by_tracks
 
 
-def get_total_sale_transactions():
+def get_total_sale_transactions(conn):
     """Returns the total sale transactions made."""
     with conn.cursor() as curs:
         curs.execute("""select 
@@ -176,7 +179,7 @@ def get_total_sale_transactions():
     return sale_df
 
 
-def get_total_sale_transactions_categorised():
+def get_total_sale_transactions_categorised(conn):
     """Returns the total sale transactions made categorised by item type."""
     with conn.cursor() as curs:
         curs.execute("""select 'Merchandise' as Type, count(*) as count from sale_merchandise_assignment
@@ -192,7 +195,7 @@ def get_total_sale_transactions_categorised():
         return sale_by_item_df
 
 
-def get_total_revenue_made():
+def get_total_revenue_made(conn):
     """Returns the total revenue made from all sales."""
     with conn.cursor() as curs:
         curs.execute("""select 
@@ -204,7 +207,7 @@ def get_total_revenue_made():
         return revenue_df
 
 
-def get_total_revenue_made_categorised():
+def get_total_revenue_made_categorised(conn):
     """Returns the total revenue made from all sales categorsised by item type."""
     with conn.cursor() as curs:
         curs.execute("""select 'Merchandise' as Type, sum(sold_for)::float as total_revenue from sale_merchandise_assignment
@@ -238,3 +241,21 @@ if __name__ == "__main__":
         top_artists_by_track_df)
     top_genres_by_album = get_top_genres_by_album_chart(top_genres_by_album)
     top_genres_by_track = get_top_genres_by_track_chart(top_genres_by_track)
+
+    top_artists_by_album_chart.save("top_artists_by_album.png", "png")
+    top_artists_by_track_chart.save("top_artists_by_track.png", "png")
+    top_genres_by_album.save("top_genres_by_album.png", "png")
+    top_genres_by_track.save("top_genres_by_track.png", "png")
+
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", "B", 24)
+    title = "Daily Report for Top 10 Artists and Genres"
+    pdf.cell(0, 20, title, align="C", ln=1)
+
+    image_list = ["top_artists_by_album.png", "top_artists_by_track.png",
+                  "top_genres_by_album.png", "top_genres_by_track.png"]
+
+    for image in image_list:
+        pdf.image(image)
+    pdf.output(f"daily_report_{date.today()}.pdf", "F")
