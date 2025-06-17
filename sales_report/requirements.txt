@@ -1,0 +1,6 @@
+psycopg2-binary
+python-dotenv
+xhtml2pdf
+pandas
+ipykernel
+altair[all]
