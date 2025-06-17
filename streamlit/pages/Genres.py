@@ -9,6 +9,7 @@ import streamlit as st
 import altair as alt
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
+import datetime
 import random
 
 load_dotenv()
@@ -20,41 +21,72 @@ st.set_page_config(
 )
 
 
-@st.cache_data
-def load_genre_album_data(_conn):
-    """Gets tag album data from the RDS.
-    Combines all relevant tables for querying, removing unneeded IDs"""
-    query = """
-        SELECT * FROM tag
-        JOIN album_tag_assignment USING (tag_id)
-        JOIN album USING (album_id)
-        JOIN sale_album_assignment USING (album_id)
-        JOIN sale USING (sale_id)
-        JOIN country USING (country_id);
-    """
-    df = pd.read_sql(query, _conn)
-    df = df.drop(['country_id',
-                  'album_tag_assignment_id', 'album_assignment_id'], axis=1)
-    return df
+def get_fresh_connection():
+    """Reconnect with connection if closed or not usable."""
+    conn = get_connection(
+        ENV['DB_HOST'],
+        ENV['DB_NAME'],
+        ENV['DB_USER'],
+        ENV['DB_PASSWORD'],
+        ENV['DB_PORT']
+    )
+    if conn.closed != 0:
+        st.cache_resource.clear()
+        conn = get_connection(
+            ENV['DB_HOST'],
+            ENV['DB_NAME'],
+            ENV['DB_USER'],
+            ENV['DB_PASSWORD'],
+            ENV['DB_PORT']
+        )
+    return conn
 
 
 @st.cache_data
-def load_genre_track_data(_conn):
-    """Gets tag track data from the RDS.
+def load_genre_album_data(date1: datetime.date, date2: datetime.date) -> pd.DataFrame:
+    """Gets tag album data from the RDS for chosen date range.
     Combines all relevant tables for querying, removing unneeded IDs"""
-    query = """
-        SELECT * FROM tag
-        JOIN track_tag_assignment USING (tag_id)
-        JOIN track USING (track_id)
-        JOIN sale_track_assignment USING (track_id)
-        JOIN sale USING (sale_id)
-        JOIN country USING (country_id);
-        """
-    df = pd.read_sql(query, _conn)
 
-    df = df.drop(['country_id',
-                  'track_tag_assignment_id', 'track_assignment_id'], axis=1)
-    return df
+    with get_fresh_connection() as conn:
+        query = """
+            SELECT * FROM tag
+            JOIN album_tag_assignment USING (tag_id)
+            JOIN album USING (album_id)
+            JOIN sale_album_assignment USING (album_id)
+            JOIN sale USING (sale_id)
+            JOIN country USING (country_id)
+            WHERE DATE(utc_date) BETWEEN %s AND %s;
+            """
+        df = pd.read_sql(query, conn, params=[date1, date2])
+        df = df.drop(['country_id',
+                      'album_tag_assignment_id', 'album_assignment_id'], axis=1)
+        return df
+
+
+@st.cache_data
+def load_genre_track_data(date1: datetime.date, date2: datetime.date):
+    """Gets tag track data from the RDS for chosen date range.
+    Combines all relevant tables for querying, removing unneeded IDs"""
+    with get_fresh_connection() as conn:
+        query = """
+            SELECT * FROM tag
+            JOIN track_tag_assignment USING (tag_id)
+            JOIN track USING (track_id)
+            JOIN sale_track_assignment USING (track_id)
+            JOIN sale USING (sale_id)
+            JOIN country USING (country_id)
+            WHERE DATE(utc_date) BETWEEN %s AND %s;
+            """
+        df = pd.read_sql(query, conn, params=[date1, date2])
+
+        df = df.drop(['country_id',
+                      'track_tag_assignment_id', 'track_assignment_id'], axis=1)
+        return df
+
+
+def find_genre_position(curr_df: pd.DataFrame) -> pd.DataFrame:
+    """Used to evaluate the position for chosen genre for chosen date range."""
+    pass
 
 
 def find_most_popular_tags(sales: pd.DataFrame) -> pd.DataFrame:
@@ -94,26 +126,35 @@ def generate_wordcloud_genres(chosen_df: pd.DataFrame, chosen_metric: str) -> No
 
 
 if __name__ == "__main__":
-    conn = get_connection(
-        ENV['DB_HOST'],
-        ENV['DB_NAME'],
-        ENV['DB_USER'],
-        ENV['DB_PASSWORD'],
-        ENV['DB_PORT']
-    )
 
-    genre_album_data = load_genre_album_data(conn)
-    genre_track_data = load_genre_track_data(conn)
+    st.title("Genres")
+
+    date_range = st.date_input(
+        "Select date range:",
+        value=(datetime.date.today() -
+               datetime.timedelta(days=7), datetime.date.today()),
+        min_value=datetime.date(2025, 1, 1),
+        max_value=datetime.date.today()
+    )
+    # --- Validate and unpack dates ---
+    if isinstance(date_range, tuple) and len(date_range) == 2:
+        date1, date2 = date_range
+    else:
+        st.error("Please select both a start and end date.")
+        st.stop()
+
+    genre_album_data = load_genre_album_data(date1, date2)
+    genre_track_data = load_genre_track_data(date1, date2)
 
     popular_track_genres = find_most_popular_tags(genre_track_data)
     popular_album_genres = find_most_popular_tags(genre_album_data)
     popular_album_and_track_genres = pd.concat(
         [popular_track_genres, popular_album_genres], ignore_index=True)
 
-    st.title("Genres")
     st.subheader("Word Cloud")
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
+
     with col1:
         dataset_choice = st.selectbox(
             "Select data:", ["All", "Albums", "Tracks"])
@@ -124,9 +165,6 @@ if __name__ == "__main__":
         }
         selected_label = st.selectbox("Query by:", list(metric_labels.keys()))
         metric_choice = metric_labels[selected_label]
-    with col3:
-        new_option = st.selectbox(
-            "Something else:", ["Option A", "Option B", "Option C"])
     if dataset_choice == "Albums":
         generate_wordcloud_genres(popular_album_genres, metric_choice)
     elif dataset_choice == "Tracks":
@@ -135,7 +173,5 @@ if __name__ == "__main__":
         generate_wordcloud_genres(
             popular_album_and_track_genres, metric_choice)
 
-    print(popular_album_genres.sort_values(by='sale_count', ascending=False))
-    print(popular_track_genres.sort_values(by='sale_count', ascending=False))
-
-    conn.close()
+    # print(popular_album_genres.sort_values(by='sale_count', ascending=False))
+    # print(popular_track_genres.sort_values(by='sale_count', ascending=False))
