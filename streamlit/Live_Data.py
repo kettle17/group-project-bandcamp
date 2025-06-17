@@ -11,13 +11,17 @@ import streamlit as st
 load_dotenv()
 
 st.set_page_config(
-    page_title="Live Data",
+    page_title="Tracktion",
     page_icon="🎶",
     layout="wide"
 )
 
 
-@st.cache_resource
+def local_css(file_name):
+    with open(file_name) as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+
 def get_connection(host, dbname, user, password, port):
     """Create and cache a SQL Server connection using pyodbc."""
     connection = psycopg2.connect(
@@ -30,13 +34,15 @@ def get_connection(host, dbname, user, password, port):
     return connection
 
 
-@st.cache_data
-def load_sale_data(conn):
-    query = """SELECT s.*, c.*, saa.* FROM sale s
+def load_sale_data(_conn):
+    query = """SELECT s.*, c.*, a.*, ar.* FROM sale s
     LEFT JOIN country c USING(country_id)
-    LEFT JOIN sale_album_assignment saa USING(sale_id);"""
-    df = pd.read_sql(query, conn)
-    conn.close()
+    LEFT JOIN sale_album_assignment saa USING(sale_id)
+    LEFT JOIN album a USING(album_id)
+    LEFT JOIN artist_album_assignment aaa USING(album_id)
+    LEFT JOIN artist ar USING(artist_id);"""
+    df = pd.read_sql(query, _conn)
+    _conn.close()
     return df
 
 
@@ -55,6 +61,11 @@ def geocode_countries(df):
 
 
 if __name__ == "__main__":
+    local_css("style.css")
+    left_co, cent_co, last_co = st.columns(3)
+    with cent_co:
+        st.image("Tracktion (1).png")
+
     conn = get_connection(
         ENV['DB_HOST'],
         ENV['DB_NAME'],
@@ -64,8 +75,26 @@ if __name__ == "__main__":
     )
     sale_df = load_sale_data(conn)
 
-    st.title("Live Data Insights")
     st.subheader("🔍 Filters")
+    country_options = sale_df['country_name'].dropna().unique()
+    selected_countries = st.multiselect(
+        "Country", options=country_options, default=None)
+
+    artist_options = sale_df['artist_name'].dropna().unique()
+    selected_artists = st.multiselect(
+        "Artist", options=artist_options, default=None)
+
+    sale_df['utc_date'] = pd.to_datetime(sale_df['utc_date'])
+    start_date, end_date = st.date_input(
+        "Sale Date Range",
+        [sale_df['utc_date'].min(), sale_df['utc_date'].max()]
+    )
+
+    filtered_df = sale_df[
+        (sale_df['country_name'].isin(selected_countries)) &
+        (sale_df['artist_name'].isin(selected_artists)) &
+        (sale_df['utc_date'].between(start_date, end_date))
+    ]
 
     geo_df = geocode_countries(sale_df)
     st.map(geo_df, size=20, color="#0044ff")
