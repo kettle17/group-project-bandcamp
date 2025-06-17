@@ -1,11 +1,15 @@
 """Artists page."""
+from Live_Data import get_connection
 import numpy as np
 from os import environ as ENV
 import pandas as pd
 from dotenv import load_dotenv
 import psycopg2
 import streamlit as st
-from Live_Data import get_connection
+import altair as alt
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+import random
 
 load_dotenv()
 
@@ -78,6 +82,17 @@ def find_most_popular_tags(sales: pd.DataFrame) -> pd.DataFrame:
     return tag_stats.merge(top_countries_pivot, on='tag_id', how='left')
 
 
+def generate_wordcloud_genres(chosen_df: pd.DataFrame, chosen_metric: str) -> None:
+    """Generates a wordcloud image for the dashboard, showing the most
+    popular genres for the chosen arguments."""
+    word_freq = dict(zip(chosen_df['tag_name'], chosen_df[chosen_metric]))
+    wordcloud = WordCloud(width=800, height=400,
+                          background_color='white').generate_from_frequencies(word_freq)
+    image = wordcloud.to_image()
+    st.image(
+        image, use_container_width=True)
+
+
 if __name__ == "__main__":
     conn = get_connection(
         ENV['DB_HOST'],
@@ -92,6 +107,33 @@ if __name__ == "__main__":
 
     popular_track_genres = find_most_popular_tags(genre_track_data)
     popular_album_genres = find_most_popular_tags(genre_album_data)
+    popular_album_and_track_genres = pd.concat(
+        [popular_track_genres, popular_album_genres], ignore_index=True)
+
+    st.title("Genres")
+    st.subheader("Word Cloud")
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        dataset_choice = st.selectbox(
+            "Select data:", ["All", "Albums", "Tracks"])
+    with col2:
+        metric_labels = {
+            "Quantity": "sale_count",
+            "Total Sales": "total_revenue"
+        }
+        selected_label = st.selectbox("Query by:", list(metric_labels.keys()))
+        metric_choice = metric_labels[selected_label]
+    with col3:
+        new_option = st.selectbox(
+            "Something else:", ["Option A", "Option B", "Option C"])
+    if dataset_choice == "Albums":
+        generate_wordcloud_genres(popular_album_genres, metric_choice)
+    elif dataset_choice == "Tracks":
+        generate_wordcloud_genres(popular_track_genres, metric_choice)
+    else:
+        generate_wordcloud_genres(
+            popular_album_and_track_genres, metric_choice)
 
     print(popular_album_genres.sort_values(by='sale_count', ascending=False))
     print(popular_track_genres.sort_values(by='sale_count', ascending=False))
