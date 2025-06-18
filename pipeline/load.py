@@ -3,7 +3,7 @@ import io, os, sys
 from os import environ as ENV
 import pandas as pd, psycopg2
 from dotenv import load_dotenv
-from psycopg2.extras import RealDictCursor, 
+from psycopg2.extras import RealDictCursor
 from psycopg2.extensions import connection, cursor
 from utilities import set_logger, get_logger
 
@@ -37,9 +37,8 @@ SALE_COLS = [
 TAG_LEN, ARTIST_LEN, COUNTRY_LEN, NAME_LEN = 50, 100, 60, 255
 
 
-def get_db_connection(config: dict[str, str]) -> :
+def get_db_connection(config: dict[str, str]) -> connection:
     """Returns a psycopg2 database connection."""
-    
     return psycopg2.connect(
         host=config["DB_HOST"],
         port=config["DB_PORT"],
