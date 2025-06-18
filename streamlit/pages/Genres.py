@@ -218,7 +218,7 @@ def display_genre_menu() -> None:
         unique_tags = popular_album_and_track_genres['tag_name'].unique()
         selected_genre = st.selectbox("Select a genre", options=unique_tags)
 
-    st.subheader(f"Genre data for {selected_genre}")
+    st.subheader(f"Genre data for {selected_genre} music")
 
     data_col1, data_col2 = st.columns(2)
 
