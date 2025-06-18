@@ -5,10 +5,10 @@ from dotenv import load_dotenv
 import streamlit as st
 from Live_Data import get_connection, load_sale_data
 
-load_dotenv()
-
 
 def load_album_data(_conn):
+    load_dotenv()
+
     query = """
     SELECT a.*, ar.artist_name FROM album a
     LEFT JOIN artist_album_assignment aaa USING(album_id)
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     conn = get_connection(
         ENV['DB_HOST'],
         ENV['DB_NAME'],
-        ENV['DB_USERNAME'],
+        ENV['DB_USER'],
         ENV['DB_PASSWORD'],
         ENV['DB_PORT']
     )

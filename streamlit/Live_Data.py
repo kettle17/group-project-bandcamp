@@ -7,9 +7,6 @@ from dotenv import load_dotenv
 import psycopg2
 import streamlit as st
 
-
-load_dotenv()
-
 st.set_page_config(
     page_title="Tracktion",
     page_icon="🎶",
@@ -71,6 +68,8 @@ def geocode_countries(df):
 
 
 if __name__ == "__main__":
+    load_dotenv()
+
     local_css("style.css")
     LOGO = "../documentation/tracktion_logo.png"
 
@@ -81,7 +80,7 @@ if __name__ == "__main__":
     conn = get_connection(
         ENV['DB_HOST'],
         ENV['DB_NAME'],
-        ENV['DB_USERNAME'],
+        ENV['DB_USER'],
         ENV['DB_PASSWORD'],
         ENV['DB_PORT']
     )
