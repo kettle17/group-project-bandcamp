@@ -1,16 +1,14 @@
 """Artists page."""
-from Live_Data import get_connection
-import numpy as np
+import datetime
 from os import environ as ENV
+
+from Live_Data import get_connection
+
 import pandas as pd
 from dotenv import load_dotenv
-import psycopg2
 import streamlit as st
-import altair as alt
 from wordcloud import WordCloud
-import matplotlib.pyplot as plt
-import datetime
-import random
+
 
 load_dotenv()
 
@@ -99,11 +97,14 @@ def find_most_popular_tags(sales: pd.DataFrame) -> pd.DataFrame:
     )
     tag_country_sales['rank'] = tag_country_sales.groupby('tag_id')['country_sales'] \
         .rank(method='first', ascending=False)
-    top_countries_pivot = (tag_country_sales[tag_country_sales['rank'] <= 3].sort_values(['tag_id', 'rank'])
-                           .pivot(index='tag_id', columns='rank', values='country_name')
-                           .rename(columns={1.0: 'top_country_1', 2.0: 'top_country_2', 3.0: 'top_country_3'})
-                           .reset_index()
-                           )
+    top_countries_pivot = (
+        tag_country_sales[tag_country_sales['rank']
+                          <= 3].sort_values(['tag_id', 'rank'])
+        .pivot(index='tag_id', columns='rank', values='country_name')
+        .rename(columns={1.0: 'top_country_1', 2.0: 'top_country_2',
+                         3.0: 'top_country_3'})
+        .reset_index()
+    )
 
     return tag_stats.merge(top_countries_pivot, on='tag_id', how='left')
 
@@ -185,7 +186,7 @@ def return_genre_popularity_position(combined_df: pd.DataFrame, selected_genre: 
         method='dense', ascending=False).astype(int)
     chosen_genre_df = combined_df[combined_df['tag_name'] == selected_genre]
 
-    return (int(chosen_genre_df['popularity_rank'].iloc[0]))
+    return int(chosen_genre_df['popularity_rank'].iloc[0])
 
 
 def display_genre_menu() -> None:
