@@ -19,6 +19,9 @@ def load_album_data(_conn):
 
 
 if __name__ == "__main__":
+    LOGO = "Tracktion (1).png"
+    st.logo(LOGO, size="large")
+
     conn = get_connection(
         ENV['DB_HOST'],
         ENV['DB_NAME'],

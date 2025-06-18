@@ -35,15 +35,17 @@ def get_connection(host, dbname, user, password, port):
     return connection
 
 
+@st.cache_data
 def run_query(_conn, query):
     """Loads the required data by querying the database."""
     df = pd.read_sql(query, _conn)
     return df
 
 
+@st.cache_data
 def load_sale_data(_conn):
     """Loads the required data by querying the database."""
-    query = """SELECT s.*, c.*, a.*, ar.* FROM sale s
+    query = """SELECT s.*, c.*, a.*, ar.*, saa.* FROM sale s
     LEFT JOIN country c USING(country_id)
     LEFT JOIN sale_album_assignment saa USING(sale_id)
     LEFT JOIN album a USING(album_id)
@@ -70,10 +72,11 @@ def geocode_countries(df):
 
 if __name__ == "__main__":
     local_css("style.css")
+    LOGO = "Tracktion (1).png"
 
     left_co, cent_co, last_co = st.columns(3)
     with cent_co:
-        st.image("Tracktion (1).png")
+        st.image(LOGO)
 
     conn = get_connection(
         ENV['DB_HOST'],
@@ -96,9 +99,9 @@ if __name__ == "__main__":
                                "SELECT ROUND(AVG(sold_for), 2) FROM sale_merchandise_assignment")
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Avg Track Sale", f"${avg_track_sale}")
-    col2.metric("Avg Album Sale", f"${avg_album_sale}")
-    col3.metric("Avg Merchandise Sale", f"${avg_merch_sale}")
+    col1.metric("Avg Track Sale", f"£{avg_track_sale["round"][0]}")
+    col2.metric("Avg Album Sale", f"£{avg_album_sale["round"][0]}")
+    col3.metric("Avg Merchandise Sale", f"£{avg_merch_sale["round"][0]}")
 
     st.subheader("🔍 Filters")
     col1, col2, col3 = st.columns(3)
@@ -132,4 +135,7 @@ if __name__ == "__main__":
     geo_df = geocode_countries(sale_df)
     st.map(geo_df, size=20, color="#0044ff")
 
+    cols1, cols2 = st.columns(2)
+    with cols1:
+        st.area_chart(data=sale_df, x="utc_date", y="sold_for")
     conn.close()
