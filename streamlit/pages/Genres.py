@@ -52,9 +52,12 @@ def load_genre_album_data(date1: datetime.date, date2: datetime.date) -> pd.Data
             SELECT * FROM tag
             JOIN album_tag_assignment USING (tag_id)
             JOIN album USING (album_id)
+            JOIN artist_album_assignment USING (album_id)
+            JOIN artist USING (artist_id)
             JOIN sale_album_assignment USING (album_id)
             JOIN sale USING (sale_id)
             JOIN country USING (country_id)
+            
             WHERE DATE(utc_date) BETWEEN %s AND %s;
             """
         df = pd.read_sql(query, conn, params=[date1, date2])
@@ -72,6 +75,8 @@ def load_genre_track_data(date1: datetime.date, date2: datetime.date):
             SELECT * FROM tag
             JOIN track_tag_assignment USING (tag_id)
             JOIN track USING (track_id)
+            JOIN artist_track_assignment USING (track_id)
+            JOIN artist USING (artist_id)
             JOIN sale_track_assignment USING (track_id)
             JOIN sale USING (sale_id)
             JOIN country USING (country_id)
@@ -114,6 +119,24 @@ def find_most_popular_tags(sales: pd.DataFrame) -> pd.DataFrame:
     return tag_stats.merge(top_countries_pivot, on='tag_id', how='left')
 
 
+def get_current_date_range(uni_key: str = None) -> (datetime.date, datetime.date):
+    """Generate date range and return chosen dates."""
+    date_range = st.date_input(
+        "Select date range:",
+        value=(datetime.date.today() -
+               datetime.timedelta(days=7), datetime.date.today()),
+        min_value=datetime.date(2025, 1, 1),
+        max_value=datetime.date.today(),
+        key=uni_key
+    )
+    if isinstance(date_range, tuple) and len(date_range) == 2:
+        date1, date2 = date_range
+    else:
+        st.error("Please select both a start and end date.")
+        st.stop()
+    return date1, date2
+
+
 def generate_wordcloud_genres(chosen_df: pd.DataFrame, chosen_metric: str) -> None:
     """Generates a wordcloud image for the dashboard, showing the most
     popular genres for the chosen arguments."""
@@ -125,39 +148,106 @@ def generate_wordcloud_genres(chosen_df: pd.DataFrame, chosen_metric: str) -> No
         image, use_container_width=True)
 
 
+def get_3_by_3_top_albums(chosen_df: pd.DataFrame, selected_genre: str):
+    """Displays a 3x3 of the most popular items of the chosen genre in the selected period"""
+
+    chosen_genre_df = chosen_df[chosen_df['tag_name'] == selected_genre]
+
+    album_sales = (
+        chosen_genre_df.groupby('album_name')
+        .agg(
+            total_revenue=pd.NamedAgg(column='sold_for', aggfunc='sum'),
+            sale_count=pd.NamedAgg(column='sale_id', aggfunc='count'),
+            art_url=pd.NamedAgg(column='art_url', aggfunc='first'),
+            artist=pd.NamedAgg(column='artist_name', aggfunc='first')
+        )
+        .reset_index()
+    )
+
+    top_albums = album_sales.sort_values(
+        by='total_revenue', ascending=False).head(9)
+    top_albums_url = (top_albums['art_url'].tolist())
+    if len(top_albums_url) < 1:
+        st.text("No albums found.")
+    else:
+        three_by_threecol1, three_by_threecol2, three_by_threecol3 = st.columns(
+            3)
+
+        columns = [three_by_threecol1, three_by_threecol2, three_by_threecol3]
+
+        for i, url in enumerate(top_albums_url):
+            col = columns[i % 3]
+            with col:
+                st.markdown(
+                    f"""
+                    <div style="margin-bottom: 20px;">
+                        <a href="{url}" target="_blank">
+                            <img src="{url}" style="width:100%; border-radius: 8px;" alt="Album Art" />
+                        </a>
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                )
+
+
 if __name__ == "__main__":
 
     st.title("Genres")
 
-    date_range = st.date_input(
-        "Select date range:",
-        value=(datetime.date.today() -
-               datetime.timedelta(days=7), datetime.date.today()),
-        min_value=datetime.date(2025, 1, 1),
-        max_value=datetime.date.today()
-    )
-    # --- Validate and unpack dates ---
-    if isinstance(date_range, tuple) and len(date_range) == 2:
-        date1, date2 = date_range
-    else:
-        st.error("Please select both a start and end date.")
-        st.stop()
+    genre_col1, genre_col2 = st.columns(2)
 
-    genre_album_data = load_genre_album_data(date1, date2)
-    genre_track_data = load_genre_track_data(date1, date2)
+    with genre_col2:
+        genre_date1, genre_date2 = get_current_date_range("genre_data_date")
 
+    genre_album_data = load_genre_album_data(genre_date1, genre_date2)
+    genre_track_data = load_genre_track_data(genre_date1, genre_date2)
     popular_track_genres = find_most_popular_tags(genre_track_data)
     popular_album_genres = find_most_popular_tags(genre_album_data)
     popular_album_and_track_genres = pd.concat(
         [popular_track_genres, popular_album_genres], ignore_index=True)
 
-    st.subheader("Word Cloud")
+    with genre_col1:
+        unique_tags = popular_album_and_track_genres['tag_name'].unique()
+        selected_genre = st.selectbox("Select a genre", options=unique_tags)
 
-    col1, col2 = st.columns(2)
+        if selected_genre:
+            filtered_df = popular_album_and_track_genres[popular_album_and_track_genres['tag_name']
+                                                         == selected_genre]
+        else:
+            filtered_df = popular_album_and_track_genres
+
+    st.subheader(f"Genre data for {selected_genre}")
+
+    data_col1, data_col2 = st.columns(2)
+
+    with data_col1:
+        st.metric(label="Popularity compared to average",
+                  value="36%")
+    with data_col2:
+        st.metric(label="Popularity compared to average",
+                  value="36%")
+
+    chart_col1, chart_col2 = st.columns(2)
+
+    with chart_col1:
+        st.subheader("Popular albums right now in this genre")
+        get_3_by_3_top_albums(genre_album_data, selected_genre)
+    with chart_col2:
+        categories = ['A', 'B', 'C', 'D', 'E']
+        values = np.random.randint(10, 100, size=len(categories))
+
+        df = pd.DataFrame({'Category': categories, 'Value': values})
+
+        # Set the category as index for plotting
+        df = df.set_index('Category')
+
+        st.bar_chart(df)
+
+    col1, col2, col3 = st.columns(3)
 
     with col1:
         dataset_choice = st.selectbox(
-            "Select data:", ["All", "Albums", "Tracks"])
+            "Select data:", ["All", "Albums", "Tracks"], key="wordcloud_data_dataset")
     with col2:
         metric_labels = {
             "Quantity": "sale_count",
@@ -165,13 +255,23 @@ if __name__ == "__main__":
         }
         selected_label = st.selectbox("Query by:", list(metric_labels.keys()))
         metric_choice = metric_labels[selected_label]
+    with col3:
+        date1, date2 = get_current_date_range("wordcloud_data_date")
+
+    genre_album_data1 = load_genre_album_data(date1, date2)
+    genre_track_data1 = load_genre_track_data(date1, date2)
+    popular_track_genres1 = find_most_popular_tags(genre_track_data1)
+    popular_album_genres1 = find_most_popular_tags(genre_album_data1)
+    popular_album_and_track_genres1 = pd.concat(
+        [popular_track_genres1, popular_album_genres1], ignore_index=True)
+
+    st.subheader("Word Cloud")
+    st.text(f"For period {date1} to {date2}:")
+
     if dataset_choice == "Albums":
-        generate_wordcloud_genres(popular_album_genres, metric_choice)
+        generate_wordcloud_genres(popular_album_genres1, metric_choice)
     elif dataset_choice == "Tracks":
-        generate_wordcloud_genres(popular_track_genres, metric_choice)
+        generate_wordcloud_genres(popular_track_genres1, metric_choice)
     else:
         generate_wordcloud_genres(
-            popular_album_and_track_genres, metric_choice)
-
-    # print(popular_album_genres.sort_values(by='sale_count', ascending=False))
-    # print(popular_track_genres.sort_values(by='sale_count', ascending=False))
+            popular_album_and_track_genres1, metric_choice)
