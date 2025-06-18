@@ -203,25 +203,3 @@ def get_total_revenue_made(conn: connection) -> dict:
                     WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY') as total_revenue;""")
         revenue_results = curs.fetchall()
         return revenue_results
-
-
-def get_total_revenue_made_categorised(conn: connection) -> dict:
-    """Returns the total revenue made from all sales categorsised by item type."""
-    with conn.cursor() as curs:
-        curs.execute("""select 'Merchandise' as Type,
-                    sum(sold_for)::float as total_revenue
-                    from sale_merchandise_assignment
-                    join sale using (sale_id)
-                    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY'
-                    union all
-                    select 'Album', sum(sold_for) from sale_album_assignment
-                    join sale using (sale_id)
-                    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY'
-                    union all
-                    select 'Track', sum(sold_for) from sale_track_assignment
-                    join sale using (sale_id)
-                    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY'
-                    order by Type
-                    ;""")
-        revenue_res = curs.fetchall()
-        return revenue_res
