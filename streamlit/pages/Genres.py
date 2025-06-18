@@ -225,7 +225,7 @@ def display_genre_menu() -> None:
                       popular_album_and_track_genres, selected_genre)}")
     with data_col2:
         st.metric(label="Amount sold",
-                  value=f"${(round(popular_album_and_track_genres.loc[popular_album_and_track_genres['tag_name']
+                  value=f"£{(round(popular_album_and_track_genres.loc[popular_album_and_track_genres['tag_name']
                                                                       == selected_genre, 'total_revenue'].iloc[0], 2)):.2f}")
 
     chart_col1, chart_col2 = st.columns(2)
