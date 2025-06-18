@@ -8,3 +8,6 @@ pandas
 dotenv
 requests
 bs4
+altair
+streamlit
+streamlit_extras
