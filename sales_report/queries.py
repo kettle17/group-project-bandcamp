@@ -204,7 +204,7 @@ def get_total_revenue_made(conn):
         return revenue_results
 
 
-def get_total_revenue_made_categorised(conn):
+def get_total_revenue_made_categorised(conn: connection):
     """Returns the total revenue made from all sales categorsised by item type."""
     with conn.cursor() as curs:
         curs.execute("""select 'Merchandise' as Type,
