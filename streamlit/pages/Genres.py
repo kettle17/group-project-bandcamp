@@ -57,7 +57,7 @@ def load_genre_album_data(date1: datetime.date, date2: datetime.date) -> pd.Data
             JOIN sale_album_assignment USING (album_id)
             JOIN sale USING (sale_id)
             JOIN country USING (country_id)
-            
+
             WHERE DATE(utc_date) BETWEEN %s AND %s;
             """
         df = pd.read_sql(query, conn, params=[date1, date2])
@@ -124,7 +124,7 @@ def get_current_date_range(uni_key: str = None) -> (datetime.date, datetime.date
     date_range = st.date_input(
         "Select date range:",
         value=(datetime.date.today() -
-               datetime.timedelta(days=7), datetime.date.today()),
+               datetime.timedelta(days=1), datetime.date.today()),
         min_value=datetime.date(2025, 1, 1),
         max_value=datetime.date.today(),
         key=uni_key
@@ -152,7 +152,6 @@ def get_3_by_3_top_albums(chosen_df: pd.DataFrame, selected_genre: str, album: b
     """Displays a 3x3 of the most popular items of the chosen genre in the selected period"""
 
     chosen_genre_df = chosen_df[chosen_df['tag_name'] == selected_genre]
-
     sales_df = (
         chosen_genre_df.groupby('album_name' if album else 'track_name')
         .agg(
@@ -164,7 +163,6 @@ def get_3_by_3_top_albums(chosen_df: pd.DataFrame, selected_genre: str, album: b
         )
         .reset_index()
     )
-
     top_results = sales_df.sort_values(
         by='total_revenue', ascending=False).head(9)
 
@@ -173,9 +171,7 @@ def get_3_by_3_top_albums(chosen_df: pd.DataFrame, selected_genre: str, album: b
     else:
         three_by_threecol1, three_by_threecol2, three_by_threecol3 = st.columns(
             3)
-
         columns = [three_by_threecol1, three_by_threecol2, three_by_threecol3]
-
         for i, (_, row) in enumerate(top_results.iterrows()):
             col = columns[i % 3]
             caption = row['caption'] if 'caption' in row else ""
@@ -194,6 +190,15 @@ def get_3_by_3_top_albums(chosen_df: pd.DataFrame, selected_genre: str, album: b
                 )
 
 
+def return_genre_popularity(combined_df: pd.DataFrame, selected_genre: str) -> int:
+    """Returns the placement of the genre for the chosen date period."""
+    combined_df['popularity_rank'] = combined_df['sale_count'].rank(
+        method='dense', ascending=False).astype(int)
+    chosen_genre_df = combined_df[combined_df['tag_name'] == selected_genre]
+
+    return (int(chosen_genre_df['popularity_rank'].iloc[0]))
+
+
 if __name__ == "__main__":
 
     st.title("Genres")
@@ -205,28 +210,35 @@ if __name__ == "__main__":
 
     genre_album_data = load_genre_album_data(genre_date1, genre_date2)
     genre_track_data = load_genre_track_data(genre_date1, genre_date2)
+
     popular_track_genres = find_most_popular_tags(genre_track_data)
     popular_album_genres = find_most_popular_tags(genre_album_data)
-    popular_album_and_track_genres = pd.concat(
-        [popular_track_genres, popular_album_genres], ignore_index=True)
+
+    popular_album_and_track_genres = (
+        pd.concat([popular_track_genres, popular_album_genres],
+                  ignore_index=True)
+        .groupby(['tag_id', 'tag_name'], as_index=False)
+        .agg({
+            'sale_count': 'sum',
+            'total_revenue': 'sum',
+            'top_country_1': 'first',
+            'top_country_2': 'first',
+            'top_country_3': 'first'
+        })
+    )
 
     with genre_col1:
         unique_tags = popular_album_and_track_genres['tag_name'].unique()
         selected_genre = st.selectbox("Select a genre", options=unique_tags)
-
-        if selected_genre:
-            filtered_df = popular_album_and_track_genres[popular_album_and_track_genres['tag_name']
-                                                         == selected_genre]
-        else:
-            filtered_df = popular_album_and_track_genres
 
     st.subheader(f"Genre data for {selected_genre}")
 
     data_col1, data_col2 = st.columns(2)
 
     with data_col1:
-        st.metric(label="Popularity compared to average",
-                  value="36%")
+        st.metric(label="Overall popularity",
+                  value=f"#{return_genre_popularity(
+                      popular_album_and_track_genres, selected_genre)}")
     with data_col2:
         st.metric(label="Popularity compared to average",
                   value="36%")
