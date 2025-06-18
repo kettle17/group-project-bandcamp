@@ -274,6 +274,11 @@ def display_wordcloud_menu() -> None:
 
 
 if __name__ == "__main__":
+    LOGO = "../documentation/tracktion_logo.png"
+
+    left_co, cent_co, last_co = st.columns(3)
+    with cent_co:
+        st.image(LOGO)
     st.title("Genres")
     display_genre_menu()
     display_wordcloud_menu()
