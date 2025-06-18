@@ -167,7 +167,7 @@ def get_3_by_3_top_albums(chosen_df: pd.DataFrame, selected_genre: str, album: b
                     f"""
                     <div style="margin-bottom: 20px;">
                         <a href="{row['url']}" target="_blank">
-                            <img src="{row['art_url']}" style="width:100%; border-radius: 8px;" alt="{caption}" title="{row['artist']} - {row[('album_name' if album else 'track_name')]}" />
+                            <img src="{row['art_url']}" style="width:100px; height:100px; border-radius: 8px;" alt="{caption}" title="{row['artist']} - {row[('album_name' if album else 'track_name')]}" />
                         </a>
                         <div style="text-align:center; font-style:italic; color: #555;">{caption}</div>
                     </div>
