@@ -148,26 +148,27 @@ def generate_wordcloud_genres(chosen_df: pd.DataFrame, chosen_metric: str) -> No
         image, use_container_width=True)
 
 
-def get_3_by_3_top_albums(chosen_df: pd.DataFrame, selected_genre: str):
+def get_3_by_3_top_albums(chosen_df: pd.DataFrame, selected_genre: str, album: bool):
     """Displays a 3x3 of the most popular items of the chosen genre in the selected period"""
 
     chosen_genre_df = chosen_df[chosen_df['tag_name'] == selected_genre]
 
-    album_sales = (
-        chosen_genre_df.groupby('album_name')
+    sales_df = (
+        chosen_genre_df.groupby('album_name' if album else 'track_name')
         .agg(
             total_revenue=pd.NamedAgg(column='sold_for', aggfunc='sum'),
             sale_count=pd.NamedAgg(column='sale_id', aggfunc='count'),
             art_url=pd.NamedAgg(column='art_url', aggfunc='first'),
+            url=pd.NamedAgg(column='url', aggfunc='first'),
             artist=pd.NamedAgg(column='artist_name', aggfunc='first')
         )
         .reset_index()
     )
 
-    top_albums = album_sales.sort_values(
+    top_results = sales_df.sort_values(
         by='total_revenue', ascending=False).head(9)
-    top_albums_url = (top_albums['art_url'].tolist())
-    if len(top_albums_url) < 1:
+
+    if top_results.empty:
         st.text("No albums found.")
     else:
         three_by_threecol1, three_by_threecol2, three_by_threecol3 = st.columns(
@@ -175,15 +176,18 @@ def get_3_by_3_top_albums(chosen_df: pd.DataFrame, selected_genre: str):
 
         columns = [three_by_threecol1, three_by_threecol2, three_by_threecol3]
 
-        for i, url in enumerate(top_albums_url):
+        for i, (_, row) in enumerate(top_results.iterrows()):
             col = columns[i % 3]
+            caption = row['caption'] if 'caption' in row else ""
+
             with col:
                 st.markdown(
                     f"""
                     <div style="margin-bottom: 20px;">
-                        <a href="{url}" target="_blank">
-                            <img src="{url}" style="width:100%; border-radius: 8px;" alt="Album Art" />
+                        <a href="{row['url']}" target="_blank">
+                            <img src="{row['art_url']}" style="width:100%; border-radius: 8px;" alt="{caption}" title="{row['artist']} - {row[('album_name' if album else 'track_name')]}" />
                         </a>
+                        <div style="text-align:center; font-style:italic; color: #555;">{caption}</div>
                     </div>
                     """,
                     unsafe_allow_html=True
@@ -231,17 +235,10 @@ if __name__ == "__main__":
 
     with chart_col1:
         st.subheader("Popular albums right now in this genre")
-        get_3_by_3_top_albums(genre_album_data, selected_genre)
+        get_3_by_3_top_albums(genre_album_data, selected_genre, True)
     with chart_col2:
-        categories = ['A', 'B', 'C', 'D', 'E']
-        values = np.random.randint(10, 100, size=len(categories))
-
-        df = pd.DataFrame({'Category': categories, 'Value': values})
-
-        # Set the category as index for plotting
-        df = df.set_index('Category')
-
-        st.bar_chart(df)
+        st.subheader("Popular tracks right now in this genre")
+        get_3_by_3_top_albums(genre_track_data, selected_genre, False)
 
     col1, col2, col3 = st.columns(3)
 
