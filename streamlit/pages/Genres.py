@@ -5,12 +5,8 @@ from os import environ as ENV
 from Live_Data import get_connection
 
 import pandas as pd
-from dotenv import load_dotenv
 import streamlit as st
 from wordcloud import WordCloud
-
-
-load_dotenv()
 
 
 def get_fresh_connection():
