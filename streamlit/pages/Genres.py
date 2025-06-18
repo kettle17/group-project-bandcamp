@@ -1,4 +1,4 @@
-"""Artists page."""
+"""Streamlit page for genre page."""
 import datetime
 from os import environ as ENV
 
