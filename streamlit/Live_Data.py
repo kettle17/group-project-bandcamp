@@ -72,7 +72,7 @@ def geocode_countries(df):
 
 if __name__ == "__main__":
     local_css("style.css")
-    LOGO = "Tracktion (1).png"
+    LOGO = "../documentation/tracktion_logo.png"
 
     left_co, cent_co, last_co = st.columns(3)
     with cent_co:

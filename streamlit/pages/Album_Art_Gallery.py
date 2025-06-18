@@ -19,7 +19,7 @@ def load_album_data(_conn):
 
 
 if __name__ == "__main__":
-    LOGO = "Tracktion (1).png"
+    LOGO = "../documentation/tracktion_logo.png"
     st.logo(LOGO, size="large")
 
     conn = get_connection(
