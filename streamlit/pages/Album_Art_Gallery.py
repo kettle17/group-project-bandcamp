@@ -35,6 +35,8 @@ if __name__ == "__main__":
 
     st.title("Album Art Gallery")
 
+    sale_df = sale_df.loc[:, ~sale_df.columns.duplicated()]
+
     album_popularity = sale_df.groupby(
         'album_id').size().reset_index(name='num_sales')
     album_df = album_df.merge(album_popularity, on='album_id', how='left')
