@@ -18,6 +18,7 @@ def get_top_artists_by_album_sales(conn):
     using (album_id)
     join artist
     using (artist_id)
+    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY'
     group by artist_name
     order by total_revenue desc
     limit 10
@@ -54,6 +55,7 @@ def get_top_artists_by_track_sales(conn):
     using (track_id)
     join artist
     using (artist_id)
+    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY'
     group by artist_name
     order by total_revenue desc
     limit 10
@@ -79,7 +81,7 @@ def get_top_artists_by_tracks_chart(df):
 def get_top_genres_by_album_sales(conn):
     """Returns the top 10 genres by total revenue made from album sales."""
     with conn.cursor() as curs:
-        curs.execute("""select tag_name, 
+        curs.execute("""select tag_name,
                     sum(sold_for)::float as total_revenue from
                     tag 
                     join album_tag_assignment 
@@ -88,6 +90,7 @@ def get_top_genres_by_album_sales(conn):
                     using (album_id)
                     join sale
                     using (sale_id)
+                    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY'
                     group by tag_name
                     order by total_revenue desc
                     limit 10
@@ -113,7 +116,7 @@ def get_top_genres_by_track_sales(conn):
     """Returns the top 10 genres by total revenue made from track sales."""
 
     with conn.cursor() as curs:
-        curs.execute("""select tag_name, sum(sold_for)::float as total_revenue from 
+        curs.execute("""select tag_name, sum(sold_for)::float as total_revenue from
                     tag 
                     join track_tag_assignment 
                     using (tag_id)
@@ -121,6 +124,7 @@ def get_top_genres_by_track_sales(conn):
                     using (track_id)
                     join sale
                     using (sale_id)
+                    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY'
                     group by tag_name
                     order by total_revenue desc
                     limit 10
@@ -148,41 +152,55 @@ def get_top_genres_by_track_chart(df):
 def get_total_sale_transactions(conn):
     """Returns the total sale transactions made."""
     with conn.cursor() as curs:
-        curs.execute("""select 
-                    (select count(*) from sale_merchandise_assignment) +
-                    (select count(*) from sale_album_assignment) +
-                    (select count(*) from sale_track_assignment) as total_sales;""")
+        curs.execute("""select
+                    (select count(*) from sale_merchandise_assignment
+                    JOIN sale using (sale_id)
+                    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY') +
+                    (select count(*) from sale_album_assignment
+                    JOIN sale using (sale_id)
+                    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY') +
+                    (select count(*) from sale_track_assignment
+                    JOIN sale using (sale_id)
+                    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY') as total_sales;""")
         sale_results = curs.fetchall()
-        sale_df = pd.DataFrame(sale_results)
-
-    return sale_results
+        return sale_results
 
 
 def get_total_sale_transactions_categorised(conn):
     """Returns the total sale transactions made categorised by item type."""
     with conn.cursor() as curs:
-        curs.execute("""select 'Merchandise' as Type, count(*) as count from sale_merchandise_assignment
+        curs.execute("""select 'Merchandise' as Type,
+                    count(*) as count from sale_merchandise_assignment
+                    join sale using (sale_id)
+                    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY'
                     union all
                     select 'Album', count(*) from sale_album_assignment
+                    join sale using (sale_id)
+                    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY'
                     union all
                     select 'Track', count(*) from sale_track_assignment
+                    join sale using (sale_id)
+                    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY'
                     order by Type
                     ;""")
         sales_res = curs.fetchall()
-        sale_by_item_df = pd.DataFrame(sales_res)
-
         return sales_res
 
 
 def get_total_revenue_made(conn):
     """Returns the total revenue made from all sales."""
     with conn.cursor() as curs:
-        curs.execute("""select 
-                    (select sum(sold_for) from sale_merchandise_assignment) +
-                    (select sum(sold_for) from sale_album_assignment) +
-                    (select sum(sold_for) from sale_track_assignment) as total_revenue;""")
+        curs.execute("""select
+                    (select sum(sold_for) from sale_merchandise_assignment
+                    JOIN sale using (sale_id)
+                    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY') +
+                    (select sum(sold_for) from sale_album_assignment
+                    JOIN sale using (sale_id)
+                    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY') +
+                    (select sum(sold_for) from sale_track_assignment
+                    JOIN sale using (sale_id)
+                    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY') as total_revenue;""")
         revenue_results = curs.fetchall()
-        revenue_df = pd.DataFrame(revenue_results)
         return revenue_results
 
 
@@ -192,12 +210,17 @@ def get_total_revenue_made_categorised(conn):
         curs.execute("""select 'Merchandise' as Type,
                     sum(sold_for)::float as total_revenue
                     from sale_merchandise_assignment
+                    join sale using (sale_id)
+                    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY'
                     union all
                     select 'Album', sum(sold_for) from sale_album_assignment
+                    join sale using (sale_id)
+                    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY'
                     union all
                     select 'Track', sum(sold_for) from sale_track_assignment
+                    join sale using (sale_id)
+                    WHERE UTC_DATE::DATE = CURRENT_DATE - INTERVAL '1 DAY'
                     order by Type
                     ;""")
         revenue_res = curs.fetchall()
-        rev_df = pd.DataFrame(revenue_res)
-    return revenue_res
+        return revenue_res

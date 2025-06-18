@@ -58,18 +58,15 @@ if __name__ == "__main__":
     top_genres_by_album.save("top_genres_by_album.png", "png")
     top_genres_by_track.save("top_genres_by_track.png", "png")
 
-    print(total_sales)
     total_sales_figure = total_sales[0]["total_sales"]
     total_album_sales = total_sales_categorised[0]["count"]
     total_track_sales = total_sales_categorised[1]["count"]
     total_merchandise_sales = total_sales_categorised[2]["count"]
 
-    # total_revenue_figure = float(total_revenue[0]["total_revenue"])
+    total_revenue_figure = float(total_revenue[0]["total_revenue"])
     total_album_revenue = total_revenue_categorised[0]["total_revenue"]
     total_track_revenue = total_revenue_categorised[1]["total_revenue"]
     total_merchandise_revenue = total_revenue_categorised[2]["total_revenue"]
-
-    print(total_revenue)
 
     yesterday = date.today() - timedelta(days=1)
 
