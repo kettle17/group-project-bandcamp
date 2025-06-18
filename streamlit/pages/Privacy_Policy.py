@@ -1,4 +1,4 @@
-"""Main Streamlit dashboard for live data."""
+"""Streamlit page for the Privacy Policy (GDPR)."""
 import streamlit as st
 
 
