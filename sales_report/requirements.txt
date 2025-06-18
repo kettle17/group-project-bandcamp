@@ -4,3 +4,4 @@ fpdf
 pandas
 ipykernel
 altair[all]
+boto3

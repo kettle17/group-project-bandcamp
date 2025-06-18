@@ -1,11 +1,12 @@
 """This script contains the functions for querying the database and making charts."""
 
+from psycopg2.extensions import connection
 import pandas as pd
 from pandas import DataFrame
 import altair as alt
 
 
-def get_top_artists_by_album_sales(conn):
+def get_top_artists_by_album_sales(conn: connection) -> DataFrame:
     """Returns a dataframe of the top 10 artists by total revenue made from album sales."""
     with conn.cursor() as curs:
         curs.execute("""select artist_name, sum(sold_for)::float as total_revenue from
@@ -28,7 +29,7 @@ def get_top_artists_by_album_sales(conn):
     return album_df
 
 
-def get_top_artists_by_album_chart(df: DataFrame):
+def get_top_artists_by_album_chart(df: DataFrame) -> alt.Chart:
     """Returns a bar chart showing top 10 artists. """
 
     chart_top_artists = alt.Chart(df, title="Top 10 Artists by Album Revenue").mark_bar().encode(
@@ -41,7 +42,7 @@ def get_top_artists_by_album_chart(df: DataFrame):
     return chart_top_artists
 
 
-def get_top_artists_by_track_sales(conn):
+def get_top_artists_by_track_sales(conn: connection) -> DataFrame:
     """Returns a dataframe of the top 10 artists by total revenue made from track sales."""
 
     with conn.cursor() as curs:
@@ -65,7 +66,7 @@ def get_top_artists_by_track_sales(conn):
     return track_df
 
 
-def get_top_artists_by_tracks_chart(df):
+def get_top_artists_by_tracks_chart(df: DataFrame) -> alt.Chart:
     """Returns a bar chart of the top 10 artists by track revenue."""
     top_artists_by_tracks = alt.Chart(df, title="Top 10 Artists by Track Revenue").mark_bar().encode(
         x=alt.X('total_revenue:Q', title="Total Revenue"),
@@ -78,7 +79,7 @@ def get_top_artists_by_tracks_chart(df):
     return top_artists_by_tracks
 
 
-def get_top_genres_by_album_sales(conn):
+def get_top_genres_by_album_sales(conn: connection) -> DataFrame:
     """Returns the top 10 genres by total revenue made from album sales."""
     with conn.cursor() as curs:
         curs.execute("""select tag_name,
@@ -100,7 +101,7 @@ def get_top_genres_by_album_sales(conn):
         return album_tag_df
 
 
-def get_top_genres_by_album_chart(df):
+def get_top_genres_by_album_chart(df: DataFrame) -> alt.Chart:
     """Returns a bar chart showing top genres by album sales."""
     top_genres_by_albums = alt.Chart(df, title="Top 10 Genres by Album Revenue").mark_bar().encode(
         x=alt.X('total_revenue:Q', title="Total Revenue"),
@@ -112,7 +113,7 @@ def get_top_genres_by_album_chart(df):
     return top_genres_by_albums
 
 
-def get_top_genres_by_track_sales(conn):
+def get_top_genres_by_track_sales(conn: connection) -> DataFrame:
     """Returns the top 10 genres by total revenue made from track sales."""
 
     with conn.cursor() as curs:
@@ -135,7 +136,7 @@ def get_top_genres_by_track_sales(conn):
         return track_tag_df
 
 
-def get_top_genres_by_track_chart(df):
+def get_top_genres_by_track_chart(df: DataFrame) -> alt.Chart:
     """Returns a bar chart showing top genres by track sales."""
 
     top_genres_by_tracks = alt.Chart(df, title="Top 10 Genres by Track Revenue").mark_bar().encode(
@@ -149,7 +150,7 @@ def get_top_genres_by_track_chart(df):
     return top_genres_by_tracks
 
 
-def get_total_sale_transactions(conn):
+def get_total_sale_transactions(conn: connection) -> dict:
     """Returns the total sale transactions made."""
     with conn.cursor() as curs:
         curs.execute("""select
@@ -166,7 +167,7 @@ def get_total_sale_transactions(conn):
         return sale_results
 
 
-def get_total_sale_transactions_categorised(conn):
+def get_total_sale_transactions_categorised(conn: connection) -> dict:
     """Returns the total sale transactions made categorised by item type."""
     with conn.cursor() as curs:
         curs.execute("""select 'Merchandise' as Type,
@@ -187,7 +188,7 @@ def get_total_sale_transactions_categorised(conn):
         return sales_res
 
 
-def get_total_revenue_made(conn):
+def get_total_revenue_made(conn: connection) -> dict:
     """Returns the total revenue made from all sales."""
     with conn.cursor() as curs:
         curs.execute("""select
@@ -204,7 +205,7 @@ def get_total_revenue_made(conn):
         return revenue_results
 
 
-def get_total_revenue_made_categorised(conn):
+def get_total_revenue_made_categorised(conn: connection) -> dict:
     """Returns the total revenue made from all sales categorsised by item type."""
     with conn.cursor() as curs:
         curs.execute("""select 'Merchandise' as Type,

@@ -1,6 +1,7 @@
 """This script queries the database for the previous day's sales
 and generates a pdf report."""
 
+import os
 from os import environ as ENV
 from datetime import date
 from datetime import timedelta
@@ -9,6 +10,7 @@ from dotenv import load_dotenv
 import psycopg2
 from psycopg2.extensions import connection
 from psycopg2.extras import RealDictCursor
+from boto3 import client
 
 from queries import (get_top_artists_by_album_sales, get_top_artists_by_track_sales,
                      get_top_genres_by_album_sales, get_top_genres_by_track_sales,
@@ -33,44 +35,19 @@ def get_db_connection() -> connection:
     )
 
 
-if __name__ == "__main__":
-
-    conn = get_db_connection()
-    top_artists_by_album_df = get_top_artists_by_album_sales(conn)
-    top_artists_by_track_df = get_top_artists_by_track_sales(conn)
-    top_genres_by_album = get_top_genres_by_album_sales(conn)
-    top_genres_by_track = get_top_genres_by_track_sales(conn)
-
-    total_sales = get_total_sale_transactions(conn)
-    total_sales_categorised = get_total_sale_transactions_categorised(conn)
-    total_revenue = get_total_revenue_made(conn)
-    total_revenue_categorised = get_total_revenue_made_categorised(conn)
-
-    top_artists_by_album_chart = get_top_artists_by_album_chart(
-        top_artists_by_album_df)
-    top_artists_by_track_chart = get_top_artists_by_tracks_chart(
-        top_artists_by_track_df)
-    top_genres_by_album = get_top_genres_by_album_chart(top_genres_by_album)
-    top_genres_by_track = get_top_genres_by_track_chart(top_genres_by_track)
-
-    top_artists_by_album_chart.save("top_artists_by_album.png", "png")
-    top_artists_by_track_chart.save("top_artists_by_track.png", "png")
-    top_genres_by_album.save("top_genres_by_album.png", "png")
-    top_genres_by_track.save("top_genres_by_track.png", "png")
-
-    total_sales_figure = total_sales[0]["total_sales"]
-    total_album_sales = total_sales_categorised[0]["count"]
-    total_track_sales = total_sales_categorised[1]["count"]
-    total_merchandise_sales = total_sales_categorised[2]["count"]
-
-    total_revenue_figure = float(total_revenue[0]["total_revenue"])
-    total_album_revenue = total_revenue_categorised[0]["total_revenue"]
-    total_track_revenue = total_revenue_categorised[1]["total_revenue"]
-    total_merchandise_revenue = total_revenue_categorised[2]["total_revenue"]
+def generate_report(total_album_sales, total_track_sales, total_merch_sales,
+                    total_album_revenue, total_track_revenue, total_merch_revenue,
+                    top_artists_by_album_chart="top_artists_by_album.png",
+                    top_artists_by_track_chart="top_artists_by_track.png",
+                    top_genres_by_album_chart="top_artists_by_album.png",
+                    top_genres_by_track_chart="top_artists_by_track.png"):
+    """Generates a pdf report of the previous day's sales."""
 
     yesterday = date.today() - timedelta(days=1)
 
     pdf = PDFReport()
+    pdf.add_page()
+    pdf.image("Screenshot 2025-06-18 at 17.40.14.jpg", 20, 100, 200)
     pdf.add_page()
 
     pdf.section_title("Overview")
@@ -86,7 +63,7 @@ if __name__ == "__main__":
         "The chart below displays the top 10 artists ranked by total revenue generated from album sales. "
         "It displays artist popularity in descending revenue amount."
     )
-    pdf.insert_chart("top_artists_by_album.png",
+    pdf.insert_chart(top_artists_by_album_chart,
                      "Figure 1: Top Artists by Album Sales Revenue")
 
     pdf.section_title("Top 10 Artists by Track Revenue")
@@ -94,7 +71,7 @@ if __name__ == "__main__":
         "The following chart ranks artists based on revenue from individual track sales. This can be indicative "
         "of strong single releases or viral trends impacting specific tracks."
     )
-    pdf.insert_chart("top_artists_by_track.png",
+    pdf.insert_chart(top_artists_by_track_chart,
                      "Figure 2: Top Artists by Track Sales Revenue")
 
     pdf.section_title("Top Genres by Revenue")
@@ -103,9 +80,9 @@ if __name__ == "__main__":
         "the top 10 genres by album and track revenue, respectively. These insights may guide future marketing and "
         "and offers valuable insight into what genres are currently generating the most revenue."
     )
-    pdf.insert_chart("top_genres_by_album.png",
+    pdf.insert_chart(top_genres_by_album_chart,
                      "Figure 3: Top Genres by Album Sales")
-    pdf.insert_chart("top_genres_by_track.png",
+    pdf.insert_chart(top_genres_by_track_chart,
                      "Figure 4: Top Genres by Track Sales")
 
     pdf.section_title("Summary Metrics")
@@ -117,7 +94,7 @@ if __name__ == "__main__":
     pdf.cell(60, 8, f"Total sales by albums: {total_album_sales}", ln=True)
     pdf.cell(60, 8, f"Total sales by tracks: {total_track_sales}", ln=True)
     pdf.cell(
-        60, 8, f"Total sales by merchandise: {total_merchandise_sales}", ln=True)
+        60, 8, f"Total sales by merchandise: {total_merch_sales}", ln=True)
 
     pdf.ln(2)
 
@@ -126,6 +103,79 @@ if __name__ == "__main__":
     pdf.cell(
         60, 8, f"Total revenue for tracks: {total_track_revenue}", ln=True)
     pdf.cell(
-        60, 8, f"Total revenue for merchandise: {total_merchandise_revenue}", ln=True)
+        60, 8, f"Total revenue for merchandise: {total_merch_revenue}", ln=True)
 
     pdf.output(f"daily_bandcamp_report_{date.today()}.pdf")
+
+
+def generate_charts(top_artists_by_album_df, top_artists_by_track_df, top_genres_by_album_df, top_genres_by_track_df):
+    """Generates the bar charts for the top 10 artists and genres."""
+
+    top_artists_by_album_chart = get_top_artists_by_album_chart(
+        top_artists_by_album_df)
+    top_artists_by_track_chart = get_top_artists_by_tracks_chart(
+        top_artists_by_track_df)
+    top_genres_by_album_chart = get_top_genres_by_album_chart(
+        top_genres_by_album_df)
+    top_genres_by_track_chart = get_top_genres_by_track_chart(
+        top_genres_by_track_df)
+
+    top_artists_by_album_chart.save("top_artists_by_album.png", "png")
+    top_artists_by_track_chart.save("top_artists_by_track.png", "png")
+    top_genres_by_album_chart.save("top_genres_by_album.png", "png")
+    top_genres_by_track_chart.save("top_genres_by_track.png", "png")
+
+
+def get_full_report():
+    """Generates a pdf report and stores it in an s3 bucket."""
+
+    conn = get_db_connection()
+    top_artists_by_album_df = get_top_artists_by_album_sales(conn)
+    top_artists_by_track_df = get_top_artists_by_track_sales(conn)
+    top_genres_by_album_df = get_top_genres_by_album_sales(conn)
+    top_genres_by_track_df = get_top_genres_by_track_sales(conn)
+
+    generate_charts(top_artists_by_album_df, top_artists_by_track_df,
+                    top_genres_by_album_df, top_genres_by_track_df)
+
+    total_sales = get_total_sale_transactions(conn)
+    total_sales_categorised = get_total_sale_transactions_categorised(conn)
+    total_revenue = get_total_revenue_made(conn)
+    total_revenue_categorised = get_total_revenue_made_categorised(conn)
+
+    total_sales_figure = total_sales[0]["total_sales"]
+    total_album_sales = total_sales_categorised[0]["count"]
+    total_track_sales = total_sales_categorised[1]["count"]
+    total_merchandise_sales = total_sales_categorised[2]["count"]
+
+    total_revenue_figure = float(total_revenue[0]["total_revenue"])
+    total_album_revenue = total_revenue_categorised[0]["total_revenue"]
+    total_track_revenue = total_revenue_categorised[1]["total_revenue"]
+    total_merchandise_revenue = total_revenue_categorised[2]["total_revenue"]
+
+    generate_report(total_album_sales, total_track_sales, total_merchandise_sales,
+                    total_album_revenue, total_track_revenue, total_merchandise_revenue)
+
+
+def connect_to_s3_client() -> client:
+    """Returns a connection to s3 bucket."""
+    return client("s3", aws_access_key_id=ENV["AWS_ACCESS_KEY_ID"],
+                  aws_secret_access_key=ENV["AWS_SECRET_ACCESS_KEY"])
+
+
+def upload_file_to_s3(s3_client, filename, object_name=None):
+    """Uploads the pdf file to an s3 bucket."""
+
+    object_name = filename
+    if object_name is None:
+        object_name = os.path.basename(filename)
+    s3_client.upload_file(
+        filename, "c17-tracktion-daily-reports", object_name)
+
+
+if __name__ == "__main__":
+
+    get_full_report()
+    s3_client = connect_to_s3_client()
+    upload_file_to_s3(
+        s3_client, f"daily_bandcamp_report_{date.today()}.pdf")
