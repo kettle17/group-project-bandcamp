@@ -11,7 +11,7 @@ streamlit/
 ├── .streamlit                   # Folder containing Streamlit theme configuration.
 ├── Live_Data.py                 # Main Streamlit page containing the live data.
 ├── pages                        # Folder containing sub-Streamlit pages.
-├── pages/Historical_Data.py     # Folder containing sub-Streamlit pages.
+├── pages/Genres.py              # Page that displays genre information for the dashboard.
 ├── data                         # Folder containing dummy .csv data for testing purposes.
 ├── visualisations               # Folder containing different visualisations for various charts.
 └── README.md                    # This file
