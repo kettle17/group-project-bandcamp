@@ -23,8 +23,11 @@ CREATE TABLE country (
 CREATE TABLE artist (
     artist_id BIGINT GENERATED ALWAYS AS IDENTITY,
     artist_name VARCHAR(100) NOT NULL UNIQUE,
-    PRIMARY KEY (artist_id)
+    PRIMARY KEY (artist_id),
+    CONSTRAINT artist_name_not_empty CHECK (TRIM(artist_name) != '')
 );
+CREATE UNIQUE INDEX unique_artist_name_trimmed ON artist (LOWER(TRIM(artist_name)));
+
 
 CREATE TABLE tag (
     tag_id BIGINT GENERATED ALWAYS AS IDENTITY,
@@ -65,6 +68,7 @@ CREATE TABLE sale (
     country_id SMALLINT NOT NULL,
     PRIMARY KEY (sale_id),
     FOREIGN KEY (country_id) REFERENCES country (country_id)
+    
 );
 
 -- Sale assignment tables 
@@ -85,6 +89,7 @@ CREATE TABLE sale_album_assignment (
     album_id BIGINT NOT NULL,
     sale_id BIGINT NOT NULL,
     sold_for DECIMAL NOT NULL,
+    is_physical BOOLEAN NOT NULL,
     PRIMARY KEY (album_assignment_id),
     FOREIGN KEY (album_id) REFERENCES album (album_id),
     FOREIGN key (sale_id) REFERENCES sale (sale_id)
