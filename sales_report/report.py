@@ -3,15 +3,22 @@ and generates a pdf report."""
 
 from os import environ as ENV
 from datetime import date
+from datetime import timedelta
 
 from dotenv import load_dotenv
 import psycopg2
 from psycopg2.extensions import connection
 from psycopg2.extras import RealDictCursor
-import pandas as pd
-from pandas import DataFrame
-import altair as alt
 from fpdf import FPDF
+
+from queries import (get_top_artists_by_album_sales, get_top_artists_by_track_sales,
+                     get_top_genres_by_album_sales, get_top_genres_by_track_sales,
+                     get_total_sale_transactions, get_total_sale_transactions_categorised,
+                     get_total_revenue_made, get_total_revenue_made_categorised,
+                     get_top_artists_by_album_chart, get_top_artists_by_tracks_chart,
+                     get_top_genres_by_album_chart, get_top_genres_by_track_chart)
+
+from pdf_class import PDFReport
 
 
 def get_db_connection() -> connection:
@@ -25,201 +32,6 @@ def get_db_connection() -> connection:
         database=ENV["DB_NAME"],
         cursor_factory=RealDictCursor
     )
-
-
-def get_top_artists_by_album_sales(conn):
-    """Returns a dataframe of the top 10 artists by total revenue made from album sales."""
-    with conn.cursor() as curs:
-        curs.execute("""select artist_name, sum(sold_for)::float as total_revenue from 
-    sale_album_assignment
-    join sale 
-    using (sale_id)
-    join album 
-    using (album_id)
-    join artist_album_assignment
-    using (album_id)
-    join artist
-    using (artist_id)
-    group by artist_name
-    order by total_revenue desc
-    limit 10
-    ;""")
-        album_results = curs.fetchall()
-        album_df = pd.DataFrame(album_results)
-    return album_df
-
-
-def get_top_artists_by_album_chart(df: DataFrame):
-    """Returns a bar chart showing top 10 artists. """
-
-    chart_top_artists = alt.Chart(df, title="Top 10 Artists by Album Revenue").mark_bar().encode(
-        x=alt.X('total_revenue:Q', title="Total Revenue"),
-        y=alt.Y("artist_name:N", sort="-x", title="Artist Name"),
-        tooltip=["artist_name", "total_revenue"],
-        color=alt.Color("artist_name").scale(scheme="goldgreen").legend(None)
-
-    )
-    return chart_top_artists
-
-
-def get_top_artists_by_track_sales(conn):
-    """Returns a dataframe of the top 10 artists by total revenue made from track sales."""
-
-    with conn.cursor() as curs:
-        curs.execute("""select artist_name, sum(sold_for)::float as total_revenue from 
-    sale_track_assignment
-    join sale 
-    using (sale_id)
-    join track 
-    using (track_id)
-    join artist_track_assignment
-    using (track_id)
-    join artist
-    using (artist_id)
-    group by artist_name
-    order by total_revenue desc
-    limit 10
-    ;""")
-        track_results = curs.fetchall()
-        track_df = pd.DataFrame(track_results)
-    return track_df
-
-
-def get_top_artists_by_tracks_chart(df):
-
-    top_artists_by_tracks = alt.Chart(df, title="Top 10 Artists by Track Revenue").mark_bar().encode(
-        x=alt.X('total_revenue:Q', title="Total Revenue"),
-        y=alt.Y("artist_name:N", sort="-x", title="Artist Name"),
-        tooltip=["artist_name", "total_revenue"],
-        color=alt.Color("artist_name").scale(scheme="goldred").legend(None)
-
-    )
-
-    return top_artists_by_tracks
-
-
-def get_top_genres_by_album_sales(conn):
-    """Returns the top 10 genres by total revenue made from album sales."""
-    with conn.cursor() as curs:
-        curs.execute("""select tag_name, sum(sold_for)::float as total_revenue from 
-                    tag 
-                    join album_tag_assignment 
-                    using (tag_id)
-                    join sale_album_assignment 
-                    using (album_id)
-                    join sale
-                    using (sale_id)
-                    group by tag_name
-                    order by total_revenue desc
-                    limit 10
-                    """)
-        album_tag_results = curs.fetchall()
-        album_tag_df = pd.DataFrame(album_tag_results)
-        return album_tag_df
-
-
-def get_top_genres_by_album_chart(df):
-    """Returns a bar chart showing top genres by album sales."""
-    top_genres_by_albums = alt.Chart(df, title="Top 10 Genres by Album Revenue").mark_bar().encode(
-        x=alt.X('total_revenue:Q', title="Total Revenue"),
-        y=alt.Y("tag_name:N", sort="-x", title="Genre"),
-        tooltip=["tag_name", "total_revenue"],
-        color=alt.Color("tag_name").scale(scheme="goldred").legend(None)
-
-    )
-    return top_genres_by_albums
-
-
-def get_top_genres_by_track_sales(conn):
-    """Returns the top 10 genres by total revenue made from track sales."""
-
-    with conn.cursor() as curs:
-        curs.execute("""select tag_name, sum(sold_for)::float as total_revenue from 
-                    tag 
-                    join track_tag_assignment 
-                    using (tag_id)
-                    join sale_track_assignment 
-                    using (track_id)
-                    join sale
-                    using (sale_id)
-                    group by tag_name
-                    order by total_revenue desc
-                    limit 10
-                    """)
-        track_tag_results = curs.fetchall()
-        track_tag_df = pd.DataFrame(track_tag_results)
-
-        return track_tag_df
-
-
-def get_top_genres_by_track_chart(df):
-    """Returns a bar chart showing top genres by track sales."""
-
-    top_genres_by_tracks = alt.Chart(df, title="Top 10 Genres by Track Revenue").mark_bar().encode(
-        x=alt.X('total_revenue:Q', title="Total Revenue"),
-        y=alt.Y("tag_name:N", sort="-x", title="Genre"),
-        tooltip=["tag_name", "total_revenue"],
-        color=alt.Color("tag_name").scale(scheme="goldred").legend(None)
-
-    )
-
-    return top_genres_by_tracks
-
-
-def get_total_sale_transactions(conn):
-    """Returns the total sale transactions made."""
-    with conn.cursor() as curs:
-        curs.execute("""select 
-                    (select count(*) from sale_merchandise_assignment) +
-                    (select count(*) from sale_album_assignment) +
-                    (select count(*) from sale_track_assignment) as total_sales;""")
-        sale_results = curs.fetchall()
-        sale_df = pd.DataFrame(sale_results)
-
-    return sale_df
-
-
-def get_total_sale_transactions_categorised(conn):
-    """Returns the total sale transactions made categorised by item type."""
-    with conn.cursor() as curs:
-        curs.execute("""select 'Merchandise' as Type, count(*) as count from sale_merchandise_assignment
-                    union all
-                    select 'Album', count(*) from sale_album_assignment
-                    union all
-                    select 'Track', count(*) from sale_track_assignment
-                    order by count desc
-                    ;""")
-        sales_res = curs.fetchall()
-        sale_by_item_df = pd.DataFrame(sales_res)
-
-        return sale_by_item_df
-
-
-def get_total_revenue_made(conn):
-    """Returns the total revenue made from all sales."""
-    with conn.cursor() as curs:
-        curs.execute("""select 
-                    (select sum(sold_for) from sale_merchandise_assignment) +
-                    (select sum(sold_for) from sale_album_assignment) +
-                    (select sum(sold_for) from sale_track_assignment) as total_sales;""")
-        revenue_results = curs.fetchall()
-        revenue_df = pd.DataFrame(revenue_results)
-        return revenue_df
-
-
-def get_total_revenue_made_categorised(conn):
-    """Returns the total revenue made from all sales categorsised by item type."""
-    with conn.cursor() as curs:
-        curs.execute("""select 'Merchandise' as Type, sum(sold_for)::float as total_revenue from sale_merchandise_assignment
-                    union all
-                    select 'Album', sum(sold_for) from sale_album_assignment
-                    union all
-                    select 'Track', sum(sold_for) from sale_track_assignment
-                    order by total_revenue desc
-                    ;""")
-        revenue_res = curs.fetchall()
-        rev_df = pd.DataFrame(revenue_res)
-    return rev_df
 
 
 if __name__ == "__main__":
@@ -247,15 +59,77 @@ if __name__ == "__main__":
     top_genres_by_album.save("top_genres_by_album.png", "png")
     top_genres_by_track.save("top_genres_by_track.png", "png")
 
-    pdf = FPDF()
+    print(total_sales)
+    total_sales_figure = total_sales[0]["total_sales"]
+    total_album_sales = total_sales_categorised[0]["count"]
+    total_track_sales = total_sales_categorised[1]["count"]
+    total_merchandise_sales = total_sales_categorised[2]["count"]
+
+    # total_revenue_figure = float(total_revenue[0]["total_revenue"])
+    total_album_revenue = total_revenue_categorised[0]["total_revenue"]
+    total_track_revenue = total_revenue_categorised[1]["total_revenue"]
+    total_merchandise_revenue = total_revenue_categorised[2]["total_revenue"]
+
+    print(total_revenue)
+
+    yesterday = date.today() - timedelta(days=1)
+
+    pdf = PDFReport()
     pdf.add_page()
-    pdf.set_font("Arial", "B", 24)
-    title = "Daily Report for Top 10 Artists and Genres"
-    pdf.cell(0, 20, title, align="C", ln=1)
 
-    image_list = ["top_artists_by_album.png", "top_artists_by_track.png",
-                  "top_genres_by_album.png", "top_genres_by_track.png"]
+    pdf.section_title("Overview")
+    pdf.paragraph(
+        "This report presents the key performance metrics for music sales recorded on BandCamp "
+        f"based on the sales data from the previous day. TThis report looks at data for {yesterday.strftime('%B %d, %Y')}. It highlights the top performing artists and genres "
+        "based on revenue generated from album and track sales. The insights aim to support business "
+        "decisions by identifying emerging trends and top contributors to revenue."
+    )
 
-    for image in image_list:
-        pdf.image(image)
-    pdf.output(f"daily_report_{date.today()}.pdf", "F")
+    pdf.section_title("Top 10 Artists by Album Revenue")
+    pdf.paragraph(
+        "The chart below displays the top 10 artists ranked by total revenue generated from album sales. "
+        "It displays artist popularity in descending revenue amount."
+    )
+    pdf.insert_chart("top_artists_by_album.png",
+                     caption="Figure 1: Top Artists by Album Sales Revenue")
+
+    pdf.section_title("Top 10 Artists by Track Revenue")
+    pdf.paragraph(
+        "The following chart ranks artists based on revenue from individual track sales. This can be indicative "
+        "of strong single releases or viral trends impacting specific tracks."
+    )
+    pdf.insert_chart("top_artists_by_track.png",
+                     caption="Figure 2: Top Artists by Track Sales Revenue")
+
+    pdf.section_title("Top Genres by Revenue")
+    pdf.paragraph(
+        "Genre analysis helps identify musical styles that are resonating with listeners. The charts below show "
+        "the top 10 genres by album and track revenue, respectively. These insights may guide future marketing and "
+        "and offers valuable insight into what genres are currently generating the most revenue."
+    )
+    pdf.insert_chart("top_genres_by_album.png",
+                     caption="Figure 3: Top Genres by Album Sales")
+    pdf.insert_chart("top_genres_by_track.png",
+                     caption="Figure 4: Top Genres by Track Sales")
+
+    pdf.section_title("Summary Metrics")
+    pdf.paragraph(
+        "Below are key summary figures capturing the total number of sale transactions and total revenue generated. "
+        "Values are broken down by item category."
+    )
+
+    pdf.cell(60, 8, f"Total sales by albums: {total_album_sales}", ln=True)
+    pdf.cell(60, 8, f"Total sales by tracks: {total_track_sales}", ln=True)
+    pdf.cell(
+        60, 8, f"Total sales by merchandise: {total_merchandise_sales}", ln=True)
+
+    pdf.ln(2)
+
+    pdf.cell(
+        60, 8, f"Total revenue for albums: {total_album_revenue}", ln=True)
+    pdf.cell(
+        60, 8, f"Total revenue for tracks: {total_track_revenue}", ln=True)
+    pdf.cell(
+        60, 8, f"Total revenue for merchandise: {total_merchandise_revenue}", ln=True)
+
+    pdf.output(f"daily_bandcamp_report_zzaa{date.today()}.pdf")
