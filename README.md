@@ -13,6 +13,7 @@ The data is visualised using Streamlit, a lightweight web app framework chosen f
 - `terraform/`: Infrastructure-as-code files, including Docker configuration for the ETL pipeline.
 - `setup.sh`: A Bash script to create a virtual environment and install all dependencies listed in requirements.txt.
 - `requirements.txt`: Text file containing external library names which are required for the project.
+- `sales_report/`: Script to generate daily pdf report and upload to s3 bucket.
 
 ## Setting Up the Environment
 - Run the command `source setup.sh` from the project root directory.
