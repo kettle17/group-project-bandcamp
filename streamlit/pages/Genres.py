@@ -14,12 +14,6 @@ import random
 
 load_dotenv()
 
-st.set_page_config(
-    page_title="Genres",
-    page_icon="🎶",
-    layout="wide"
-)
-
 
 def get_fresh_connection():
     """Reconnect with connection if closed or not usable."""
@@ -87,11 +81,6 @@ def load_genre_track_data(date1: datetime.date, date2: datetime.date):
         df = df.drop(['country_id',
                       'track_tag_assignment_id', 'track_assignment_id'], axis=1)
         return df
-
-
-def find_genre_position(curr_df: pd.DataFrame) -> pd.DataFrame:
-    """Used to evaluate the position for chosen genre for chosen date range."""
-    pass
 
 
 def find_most_popular_tags(sales: pd.DataFrame) -> pd.DataFrame:
@@ -190,7 +179,7 @@ def get_3_by_3_top_albums(chosen_df: pd.DataFrame, selected_genre: str, album: b
                 )
 
 
-def return_genre_popularity(combined_df: pd.DataFrame, selected_genre: str) -> int:
+def return_genre_popularity_position(combined_df: pd.DataFrame, selected_genre: str) -> int:
     """Returns the placement of the genre for the chosen date period."""
     combined_df['popularity_rank'] = combined_df['sale_count'].rank(
         method='dense', ascending=False).astype(int)
@@ -199,10 +188,8 @@ def return_genre_popularity(combined_df: pd.DataFrame, selected_genre: str) -> i
     return (int(chosen_genre_df['popularity_rank'].iloc[0]))
 
 
-if __name__ == "__main__":
-
-    st.title("Genres")
-
+def display_genre_menu() -> None:
+    """Display genre menu section of Streamlit page."""
     genre_col1, genre_col2 = st.columns(2)
 
     with genre_col2:
@@ -237,11 +224,12 @@ if __name__ == "__main__":
 
     with data_col1:
         st.metric(label="Overall popularity",
-                  value=f"#{return_genre_popularity(
+                  value=f"#{return_genre_popularity_position(
                       popular_album_and_track_genres, selected_genre)}")
     with data_col2:
-        st.metric(label="Popularity compared to average",
-                  value="36%")
+        st.metric(label="Amount sold",
+                  value=f"${(round(popular_album_and_track_genres.loc[popular_album_and_track_genres['tag_name']
+                                                                      == selected_genre, 'total_revenue'].iloc[0], 2)):.2f}")
 
     chart_col1, chart_col2 = st.columns(2)
 
@@ -252,6 +240,9 @@ if __name__ == "__main__":
         st.subheader("Popular tracks right now in this genre")
         get_3_by_3_top_albums(genre_track_data, selected_genre, False)
 
+
+def display_wordcloud_menu() -> None:
+    """Display wordcloud menu section of Streamlit page."""
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -267,20 +258,25 @@ if __name__ == "__main__":
     with col3:
         date1, date2 = get_current_date_range("wordcloud_data_date")
 
-    genre_album_data1 = load_genre_album_data(date1, date2)
-    genre_track_data1 = load_genre_track_data(date1, date2)
-    popular_track_genres1 = find_most_popular_tags(genre_track_data1)
-    popular_album_genres1 = find_most_popular_tags(genre_album_data1)
+    genre_album_data_cloud = load_genre_album_data(date1, date2)
+    genre_track_data_cloud = load_genre_track_data(date1, date2)
+    popular_track_genres_cloud = find_most_popular_tags(genre_track_data_cloud)
+    popular_album_genres_cloud = find_most_popular_tags(genre_album_data_cloud)
     popular_album_and_track_genres1 = pd.concat(
-        [popular_track_genres1, popular_album_genres1], ignore_index=True)
+        [popular_track_genres_cloud, popular_album_genres_cloud], ignore_index=True)
 
     st.subheader("Word Cloud")
-    st.text(f"For period {date1} to {date2}:")
 
     if dataset_choice == "Albums":
-        generate_wordcloud_genres(popular_album_genres1, metric_choice)
+        generate_wordcloud_genres(popular_album_genres_cloud, metric_choice)
     elif dataset_choice == "Tracks":
-        generate_wordcloud_genres(popular_track_genres1, metric_choice)
+        generate_wordcloud_genres(popular_track_genres_cloud, metric_choice)
     else:
         generate_wordcloud_genres(
             popular_album_and_track_genres1, metric_choice)
+
+
+if __name__ == "__main__":
+    st.title("Genres")
+    display_genre_menu()
+    display_wordcloud_menu()
