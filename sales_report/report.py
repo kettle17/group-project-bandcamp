@@ -47,7 +47,11 @@ def generate_report(total_album_sales, total_track_sales, total_merch_sales,
 
     pdf = PDFReport()
     pdf.add_page()
-    pdf.image("Screenshot 2025-06-18 at 17.40.14.jpg", 20, 100, 200)
+    pdf.ln(60)
+    pdf.set_font("Helvetica", "B", 18)
+    pdf.cell(0, 50, txt="BANDCAMP SALES PERFORMANCE REPORT", align="C", ln=True)
+
+    pdf.cell(0, 0, txt="DAILY SUMMARY OF KEY REVENUE METRICS", align="C")
     pdf.add_page()
 
     pdf.section_title("Overview")
@@ -176,6 +180,6 @@ def upload_file_to_s3(s3_client, filename, object_name=None):
 if __name__ == "__main__":
 
     get_full_report()
-    s3_client = connect_to_s3_client()
-    upload_file_to_s3(
-        s3_client, f"daily_bandcamp_report_{date.today()}.pdf")
+    # s3_client = connect_to_s3_client()
+    # upload_file_to_s3(
+    #     s3_client, f"daily_bandcamp_report_{date.today()}.pdf")

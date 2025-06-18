@@ -16,6 +16,7 @@ class PDFReport(FPDF):
         self.cell(
             0, 10, f"Date report generated: {date.today().strftime('%B %d, %Y')}", ln=True, align="C")
         self.ln(10)
+        self.image("tracktion_logo_transparent_light.png", x=0, y=10, w=50)
 
     def section_title(self, title):
         """Sets the font and text colour for section titles."""
