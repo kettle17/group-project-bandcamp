@@ -8,7 +8,7 @@ import altair as alt
 def get_top_artists_by_album_sales(conn):
     """Returns a dataframe of the top 10 artists by total revenue made from album sales."""
     with conn.cursor() as curs:
-        curs.execute("""select artist_name, sum(sold_for)::float as total_revenue from 
+        curs.execute("""select artist_name, sum(sold_for)::float as total_revenue from
     sale_album_assignment
     join sale 
     using (sale_id)
@@ -44,7 +44,7 @@ def get_top_artists_by_track_sales(conn):
     """Returns a dataframe of the top 10 artists by total revenue made from track sales."""
 
     with conn.cursor() as curs:
-        curs.execute("""select artist_name, sum(sold_for)::float as total_revenue from 
+        curs.execute("""select artist_name, sum(sold_for)::float as total_revenue from
     sale_track_assignment
     join sale 
     using (sale_id)
@@ -64,7 +64,7 @@ def get_top_artists_by_track_sales(conn):
 
 
 def get_top_artists_by_tracks_chart(df):
-
+    """Returns a bar chart of the top 10 artists by track revenue."""
     top_artists_by_tracks = alt.Chart(df, title="Top 10 Artists by Track Revenue").mark_bar().encode(
         x=alt.X('total_revenue:Q', title="Total Revenue"),
         y=alt.Y("artist_name:N", sort="-x", title="Artist Name"),
@@ -79,7 +79,8 @@ def get_top_artists_by_tracks_chart(df):
 def get_top_genres_by_album_sales(conn):
     """Returns the top 10 genres by total revenue made from album sales."""
     with conn.cursor() as curs:
-        curs.execute("""select tag_name, sum(sold_for)::float as total_revenue from 
+        curs.execute("""select tag_name, 
+                    sum(sold_for)::float as total_revenue from
                     tag 
                     join album_tag_assignment 
                     using (tag_id)
@@ -165,7 +166,7 @@ def get_total_sale_transactions_categorised(conn):
                     select 'Album', count(*) from sale_album_assignment
                     union all
                     select 'Track', count(*) from sale_track_assignment
-                    order by count desc
+                    order by Type
                     ;""")
         sales_res = curs.fetchall()
         sale_by_item_df = pd.DataFrame(sales_res)
@@ -188,12 +189,14 @@ def get_total_revenue_made(conn):
 def get_total_revenue_made_categorised(conn):
     """Returns the total revenue made from all sales categorsised by item type."""
     with conn.cursor() as curs:
-        curs.execute("""select 'Merchandise' as Type, sum(sold_for)::float as total_revenue from sale_merchandise_assignment
+        curs.execute("""select 'Merchandise' as Type,
+                    sum(sold_for)::float as total_revenue
+                    from sale_merchandise_assignment
                     union all
                     select 'Album', sum(sold_for) from sale_album_assignment
                     union all
                     select 'Track', sum(sold_for) from sale_track_assignment
-                    order by total_revenue desc
+                    order by Type
                     ;""")
         revenue_res = curs.fetchall()
         rev_df = pd.DataFrame(revenue_res)

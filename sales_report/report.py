@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 import psycopg2
 from psycopg2.extensions import connection
 from psycopg2.extras import RealDictCursor
-from fpdf import FPDF
 
 from queries import (get_top_artists_by_album_sales, get_top_artists_by_track_sales,
                      get_top_genres_by_album_sales, get_top_genres_by_track_sales,
@@ -91,7 +90,7 @@ if __name__ == "__main__":
         "It displays artist popularity in descending revenue amount."
     )
     pdf.insert_chart("top_artists_by_album.png",
-                     caption="Figure 1: Top Artists by Album Sales Revenue")
+                     "Figure 1: Top Artists by Album Sales Revenue")
 
     pdf.section_title("Top 10 Artists by Track Revenue")
     pdf.paragraph(
@@ -99,7 +98,7 @@ if __name__ == "__main__":
         "of strong single releases or viral trends impacting specific tracks."
     )
     pdf.insert_chart("top_artists_by_track.png",
-                     caption="Figure 2: Top Artists by Track Sales Revenue")
+                     "Figure 2: Top Artists by Track Sales Revenue")
 
     pdf.section_title("Top Genres by Revenue")
     pdf.paragraph(
@@ -108,9 +107,9 @@ if __name__ == "__main__":
         "and offers valuable insight into what genres are currently generating the most revenue."
     )
     pdf.insert_chart("top_genres_by_album.png",
-                     caption="Figure 3: Top Genres by Album Sales")
+                     "Figure 3: Top Genres by Album Sales")
     pdf.insert_chart("top_genres_by_track.png",
-                     caption="Figure 4: Top Genres by Track Sales")
+                     "Figure 4: Top Genres by Track Sales")
 
     pdf.section_title("Summary Metrics")
     pdf.paragraph(
@@ -132,4 +131,4 @@ if __name__ == "__main__":
     pdf.cell(
         60, 8, f"Total revenue for merchandise: {total_merchandise_revenue}", ln=True)
 
-    pdf.output(f"daily_bandcamp_report_zzaa{date.today()}.pdf")
+    pdf.output(f"daily_bandcamp_report_{date.today()}.pdf")
