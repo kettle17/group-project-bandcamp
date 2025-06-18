@@ -1,70 +1,11 @@
 """Main Streamlit dashboard for live data."""
-from geopy.geocoders import Nominatim
-import numpy as np
-from os import environ as ENV
-import pandas as pd
-from dotenv import load_dotenv
-import psycopg2
 import streamlit as st
-
-st.set_page_config(
-    page_title="Tracktion",
-    page_icon="🎶",
-    layout="wide"
-)
 
 
 def local_css(file_name):
     """Connects to the style.css script to add a font."""
-    with open(file_name) as f:
+    with open(file_name, encoding='utf-8') as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
-
-
-def get_connection(host, dbname, user, password, port):
-    """Create and cache a SQL Server connection using pyodbc."""
-    connection = psycopg2.connect(
-        host=host,
-        database=dbname,
-        user=user,
-        password=password,
-        port=port
-    )
-    return connection
-
-
-@st.cache_data
-def run_query(_conn, query):
-    """Loads the required data by querying the database."""
-    df = pd.read_sql(query, _conn)
-    return df
-
-
-@st.cache_data
-def load_sale_data(_conn):
-    """Loads the required data by querying the database."""
-    query = """SELECT s.*, c.*, a.*, ar.*, saa.* FROM sale s
-    LEFT JOIN country c USING(country_id)
-    LEFT JOIN sale_album_assignment saa USING(sale_id)
-    LEFT JOIN album a USING(album_id)
-    LEFT JOIN artist_album_assignment aaa USING(album_id)
-    LEFT JOIN artist ar USING(artist_id);"""
-    df = pd.read_sql(query, _conn)
-    return df
-
-
-@st.cache_data
-def geocode_countries(df):
-    """Loads every country into a dataframe to use on the map visualisation."""
-    geolocator = Nominatim(user_agent="bandcamp-map", timeout=10)
-    locations = []
-
-    for country in df['country_name'].dropna().unique():
-        location = geolocator.geocode(country)
-        if location:
-            locations.append(
-                {'country_name': country, 'lat': location.latitude, 'lon': location.longitude})
-
-    return pd.DataFrame(locations)
 
 
 if __name__ == "__main__":
