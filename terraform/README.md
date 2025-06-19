@@ -10,8 +10,7 @@ This directory contains the Terraform configuration used to provision and manage
 terraform/
 ├── main.tf           # Core Terraform configuration for RDS, networking, and security groups
 ├── variables.tf      # Input variables for configuration (e.g., database credentials, subnet IDs, etc.)
-├── terraform.tfvars  # User-defined values for the variables (should be created manually)
-└── README.md         # This file
+└── terraform.tfvars  # User-defined values for the variables (should be created manually)
 ```
 ---
 

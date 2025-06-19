@@ -33,12 +33,17 @@ if __name__ == "__main__":
     album_df = load_album_data(conn)
     sale_df = load_sale_data(conn)
 
-    st.title("Album Art Gallery")
+    st.markdown(
+        "<h1 style='text-align: center;'>Album Art Gallery</h1>", unsafe_allow_html=True)
+
+    sale_df = sale_df.loc[:, ~sale_df.columns.duplicated()]
 
     album_popularity = sale_df.groupby(
         'album_id').size().reset_index(name='num_sales')
     album_df = album_df.merge(album_popularity, on='album_id', how='left')
     album_df['num_sales'] = album_df['num_sales'].fillna(0).astype(int)
+
+    album_df = album_df.sort_values(by='num_sales', ascending=False).head(250)
 
     album_df = album_df.dropna(
         subset=['art_url', 'url', 'album_name', 'artist_name'])
