@@ -20,7 +20,8 @@ def check_email_address(email: str) -> bool:
 
 
 @st.dialog("Alerts")
-def submit_alert_request(artist_or_genre: str, export_topic: str, frequency: str):
+def submit_alert_request(artist_or_genre: str, export_topic: str, frequency: str) -> None:
+    """Dialog for submitting user's email/phone number along with alert customisation."""
     choice = st.selectbox("How would you like to receive alerts?",
                           options=['Email', 'Text'])
     if choice == 'Email':
@@ -29,7 +30,13 @@ def submit_alert_request(artist_or_genre: str, export_topic: str, frequency: str
         input = streamlit_phone_number.st_phone_number(
             "Phone", placeholder="Please enter your phone number", default_country="GB")
     if st.button("Submit"):
-        return [artist_or_genre, export_topic, frequency]
+        st.session_state.submit_alert_request = {
+            "selection": artist_or_genre, "topic": export_topic, "frequency": frequency, "contact": input}
+        st.rerun()
+
+
+def return_submit_alert_request():
+    return st.session_state.submit_alert_request
 
 
 def generate_header() -> None:
@@ -73,7 +80,12 @@ if __name__ == "__main__":
         st.text("Top 10 artists and their sales/popularity")
     with summarycol3:
         if st.button("Sign up to alerts", key='summarybutton'):
-            submit_alert_request(artist_or_genre, 'Summary', frequency_summary)
+            print(submit_alert_request(
+                artist_or_genre, 'Summary', frequency_summary))
+        if "submit_alert_request" in st.session_state:
+            print(return_submit_alert_request())
+
+            st.text("success")
 
     selectcol1, selectcol2, selectcol3 = st.columns(3)
 
