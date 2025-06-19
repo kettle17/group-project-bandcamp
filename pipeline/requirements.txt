@@ -1,5 +1,6 @@
 pytest
 pylint
+psycopg2
 psycopg2-binary
 pytest-cov
 python-dotenv
@@ -7,3 +8,13 @@ pandas
 dotenv
 requests
 bs4
+altair
+streamlit
+streamlit_extras
+plotly
+country_converter
+st-files-connection
+s3fs
+boto3
+streamlit_phone_number
+wordcloud
