@@ -16,7 +16,12 @@ def local_css(file_name):
 
 def check_email_address(email: str) -> bool:
     """Check email address to see if it matches standard regex."""
-    return re.search("\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", email)
+    return bool(re.fullmatch("^\S+@\S+\.\S+$", email))
+
+
+def check_phone_number(phone: str) -> bool:
+    """Check phone number to see if it is valid."""
+    return bool(re.fullmatch(r"^\+?[1-9]\d{7,14}$", phone['number']))
 
 
 @st.dialog("Alerts")
@@ -30,9 +35,20 @@ def submit_alert_request(artist_or_genre: str, export_topic: str, frequency: str
         input = streamlit_phone_number.st_phone_number(
             "Phone", placeholder="Please enter your phone number", default_country="GB")
     if st.button("Submit"):
-        st.session_state.submit_alert_request = {
-            "selection": artist_or_genre, "topic": export_topic, "frequency": frequency, "contact": input}
-        st.rerun()
+        if choice == 'Email':
+            if check_email_address(input):
+                st.session_state.submit_alert_request = {
+                    "selection": artist_or_genre, "topic": export_topic, "frequency": frequency, "contact": input}
+                st.rerun()
+            else:
+                st.error("Email not valid", icon="🚨", width="stretch")
+        else:
+            if check_phone_number(input):
+                st.session_state.submit_alert_request = {
+                    "selection": artist_or_genre, "topic": export_topic, "frequency": frequency, "contact": input['number']}
+                st.rerun()
+            else:
+                st.error("Phone number not valid", icon="🚨", width="stretch")
 
 
 def return_submit_alert_request():
@@ -49,7 +65,7 @@ def generate_header() -> None:
         st.image(LOGO)
 
     st.markdown(
-        "<h1 style='text-align: center;;'>Sign up to receive alerts</h1>", unsafe_allow_html=True)
+        "<h1 style='text-align: center;'>Sign up to receive alerts</h1>", unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
