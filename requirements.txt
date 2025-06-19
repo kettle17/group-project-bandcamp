@@ -11,5 +11,10 @@ bs4
 altair
 streamlit
 streamlit_extras
+plotly
+country_converter
+st-files-connection
+s3fs
+boto3
 streamlit_phone_number
 wordcloud
