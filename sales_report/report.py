@@ -130,7 +130,23 @@ def generate_charts(top_artists_by_album_df, top_artists_by_track_df, top_genres
     top_genres_by_track_chart.save("top_genres_by_track.png", "png")
 
 
-def get_full_report():
+def connect_to_s3_client() -> client:
+    """Returns a connection to s3 bucket."""
+    return client("s3", aws_access_key_id=ENV["AWS_ACCESS_KEY_ID"],
+                  aws_secret_access_key=ENV["AWS_SECRET_ACCESS_KEY"])
+
+
+def upload_file_to_s3(s3_client, filename, object_name=None):
+    """Uploads the pdf file to an s3 bucket."""
+
+    object_name = filename
+    if object_name is None:
+        object_name = os.path.basename(filename)
+    s3_client.upload_file(
+        filename, "c17-tracktion-daily-reports", object_name)
+
+
+def generate_pdf_and_upload_to_s3():
     """Generates a pdf report and stores it in an s3 bucket."""
 
     conn = get_db_connection()
@@ -160,26 +176,11 @@ def get_full_report():
     generate_report(total_album_sales, total_track_sales, total_merchandise_sales,
                     total_album_revenue, total_track_revenue, total_merchandise_revenue)
 
-
-def connect_to_s3_client() -> client:
-    """Returns a connection to s3 bucket."""
-    return client("s3", aws_access_key_id=ENV["AWS_ACCESS_KEY_ID"],
-                  aws_secret_access_key=ENV["AWS_SECRET_ACCESS_KEY"])
-
-
-def upload_file_to_s3(s3_client, filename, object_name=None):
-    """Uploads the pdf file to an s3 bucket."""
-
-    object_name = filename
-    if object_name is None:
-        object_name = os.path.basename(filename)
-    s3_client.upload_file(
-        filename, "c17-tracktion-daily-reports", object_name)
+    s3_client = connect_to_s3_client()
+    upload_file_to_s3(
+        s3_client, f"daily_bandcamp_report_{date.today()}.pdf")
 
 
 if __name__ == "__main__":
 
-    get_full_report()
-    # s3_client = connect_to_s3_client()
-    # upload_file_to_s3(
-    #     s3_client, f"daily_bandcamp_report_{date.today()}.pdf")
+    generate_pdf_and_upload_to_s3()
