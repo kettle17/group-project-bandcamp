@@ -287,5 +287,5 @@ if __name__ == "__main__":
     st.markdown(
         "<h1 style='text-align: center;'>Genres</h1>", unsafe_allow_html=True)
 
-    display_genre_menu()
     display_wordcloud_menu()
+    display_genre_menu()
