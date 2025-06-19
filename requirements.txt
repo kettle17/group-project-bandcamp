@@ -16,3 +16,5 @@ country_converter
 st-files-connection
 s3fs
 boto3
+streamlit_phone_number
+wordcloud

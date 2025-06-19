@@ -92,12 +92,15 @@ def bad_df():
         "currency": ["usdollars", "€"],
         "amount_paid": ["ten", -5],
         "amount_paid_usd": [None, "NaN"],
-        "country": [123, "Atlantis"],
+        "country_name": [123, "Atlantis"],
         "country_code": ["XX", None],
         "url": ["not_a_url", ""],
         "art_url": [None, 12345],
         "event_type": ["", "refund?"],
-        "slug_type": ["", None]
+        "slug_type": ["", None],
+        "tag_names": ["", None],
+        "release_date": ["", None],
+        "sold_for": ["", None]
     }
     return pd.DataFrame(data)
 
@@ -145,7 +148,6 @@ def setup_test_env():
         'DB_PORT': '5432',
         'DB_NAME': 'test_database'
     }
-    
+
     with patch.dict(os.environ, test_env):
         yield
-

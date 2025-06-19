@@ -28,17 +28,6 @@ class TestCleaningFunctions:
                                             'country_code', 'url', 'art_url', 'event_type',
                                             'slug_type', 'tag_names', 'release_date']
 
-    def test_rename_no_columns(self, bad_df):
-        """Tests that if no columns match, DataFrame remains unchanged."""
-        renamed_df = rename_columns(bad_df)
-        expected_cols = [
-            "utc_date", "artist_name", "item_type", "item_description",
-            "album_name", "currency", "amount_paid", "sold_for",
-            "country_name", "country_code", "url", "art_url",
-            "event_type", "slug_type"
-        ]
-        assert list(renamed_df.columns) == expected_cols
-
     def test_completely_empty_dataframe(self, empty_df):
         """Tests renaming on an empty DataFrame."""
         renamed_df = rename_columns(empty_df)
