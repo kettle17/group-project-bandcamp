@@ -9,6 +9,12 @@ import streamlit as st
 from wordcloud import WordCloud
 
 
+def local_css(file_name):
+    """Connects to the style.css script to add a font."""
+    with open(file_name) as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+
 def get_fresh_connection():
     """Reconnect with connection if closed or not usable."""
     conn = get_connection(
@@ -165,9 +171,9 @@ def get_3_by_3_top_albums(chosen_df: pd.DataFrame, selected_genre: str, album: b
             with col:
                 st.markdown(
                     f"""
-                    <div style="margin-bottom: 20px;">
+                    <div style="margin-bottom: 20px; width:100%; height:100%">
                         <a href="{row['url']}" target="_blank">
-                            <img src="{row['art_url']}" style="width:100px; height:100px; border-radius: 8px;" alt="{caption}" title="{row['artist']} - {row[('album_name' if album else 'track_name')]}" />
+                            <img src="{row['art_url']}" style="; object-fit:cover; border-radius: 8px;" alt="{caption}" title="{row['artist']} - {row[('album_name' if album else 'track_name')]}" />
                         </a>
                         <div style="text-align:center; font-style:italic; color: #555;">{caption}</div>
                     </div>
@@ -274,11 +280,12 @@ def display_wordcloud_menu() -> None:
 
 
 if __name__ == "__main__":
+    local_css("style.css")
     LOGO = "../documentation/tracktion_logo.png"
+    st.logo(LOGO, size="large")
 
-    left_co, cent_co, last_co = st.columns(3)
-    with cent_co:
-        st.image(LOGO)
-    st.title("Genres")
+    st.markdown(
+        "<h1 style='text-align: center;'>Genres</h1>", unsafe_allow_html=True)
+
     display_genre_menu()
     display_wordcloud_menu()
