@@ -46,7 +46,7 @@ resource "aws_security_group" "lambda_sg" {
 ### IAM Lambda
 #########################
 
-data "aws_iam_policy_document" "lambda-role-trust-policy-doc" {
+data "aws_iam_policy_document" "report-lambda-role-trust-policy-doc" {
     statement {
       effect = "Allow"
       principals {
@@ -67,7 +67,7 @@ data "aws_iam_policy_document" "report-lambda-role-permissions-policy-doc" {
         "logs:CreateLogStream",
         "logs:PutLogEvents"
       ]
-      resources = [ "arn:aws:logs:eu-west-2:129033205317:log-group:aws/lambda/*" ]
+      resources = [ "arn:aws:logs:eu-west-2:129033205317:*" ]
     }
 
     statement {
@@ -79,12 +79,13 @@ data "aws_iam_policy_document" "report-lambda-role-permissions-policy-doc" {
       resources = [ "arn:aws:rds-db:eu-west-2:129033205317:dbuser:c17-tracktion-rds/public" ]
     }
 
-      statement {
-      effect = "Allow"
-      actions = [
-        "s3:PutObject"
-      ]
-      resources = [ "arn:aws:rds-db:eu-west-2:129033205317:dbuser:c17-tracktion-rds/public" ]
+    statement {
+    effect = "Allow"
+    actions = [
+    "s3:PutObject"
+    ]
+    resources = [ "arn:aws:s3:::c17-tracktion-daily-reports-and-images/*" ]
+
     }
 
 
@@ -92,7 +93,7 @@ data "aws_iam_policy_document" "report-lambda-role-permissions-policy-doc" {
 
 resource "aws_iam_role" "report-lambda-role" {
   name = "c17-tracktion-report-lambda-role"
-  assume_role_policy = data.aws_iam_policy_document.lambda-role-trust-policy-doc.json
+  assume_role_policy = data.aws_iam_policy_document.report-lambda-role-trust-policy-doc.json
 }
 
 resource "aws_iam_policy" "report-lambda-role-permissions-policy" {
@@ -114,7 +115,8 @@ resource "aws_lambda_function" "report-lambda" {
   role = aws_iam_role.report-lambda-role.arn
   package_type = "Image"
   image_uri = data.aws_ecr_image.report-lambda-image.image_uri
-  timeout = 60
+  timeout = 300
+  memory_size = 512
   environment {
     variables = {
         DB_HOST = var.DB_HOST
@@ -182,7 +184,7 @@ resource "aws_scheduler_schedule" "report-schedule" {
     mode = "OFF"
     }
 
-    schedule_expression = "rate(1 day)"
+    schedule_expression = "cron(0 7 * * ? *)"
 
     target {
         arn      = aws_lambda_function.report-lambda.arn
