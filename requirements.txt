@@ -12,3 +12,4 @@ altair
 streamlit
 streamlit_extras
 streamlit_phone_number
+wordcloud
