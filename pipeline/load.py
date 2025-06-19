@@ -1,11 +1,14 @@
 """Script for the load portion of the ETL pipeline."""
-import io, os, sys
+import io
+import os
+import sys
 from os import environ as ENV
-import pandas as pd, psycopg2
+import pandas as pd
+import psycopg2
 from dotenv import load_dotenv
 from psycopg2.extras import RealDictCursor
 from psycopg2.extensions import connection, cursor
-from utilities import set_logger, get_logger
+from utilities import get_logger
 
 
 STAGING_DDL = """
@@ -54,7 +57,8 @@ def copy_df(cur: cursor, df: pd.DataFrame, table: str, cols: list[str]) -> None:
     buf = io.StringIO()
     df.to_csv(buf, index=False, header=False, columns=cols)
     buf.seek(0)
-    cur.copy_expert(f"COPY {table} ({', '.join(cols)}) FROM STDIN WITH CSV", buf)
+    cur.copy_expert(
+        f"COPY {table} ({', '.join(cols)}) FROM STDIN WITH CSV", buf)
 
 
 def build_frames(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -90,15 +94,15 @@ def build_frames(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     )
     sales["album_name"] = df.apply(
         lambda row: (
-            (row.album_name if row.item_type == "p" 
-             else (row.get('album_title') or item_description[row.name] or 'Unknown Album'))[:NAME_LEN] 
+            (row.album_name if row.item_type == "p"
+             else (row.get('album_title') or item_description[row.name] or 'Unknown Album'))[:NAME_LEN]
             if (row.slug_type == "a" and row.item_type in ["a", "p"]) else None
         ),
         axis=1,
     )
     sales["merch_name"] = df.apply(
-        lambda row: (item_description[row.name][:NAME_LEN] 
-                    if (row.slug_type == "p" and row.item_type == "p") else None), axis=1
+        lambda row: (item_description[row.name][:NAME_LEN]
+                     if (row.slug_type == "p" and row.item_type == "p") else None), axis=1
     )
 
     return sales[SALE_COLS], tag_df[["url", "tag_name"]]
@@ -111,19 +115,25 @@ def insert_dimension_data(cur: cursor, label: str, count_sql: str, insert_sql: s
     attempted = next(iter(cur.fetchone().values()))
     cur.execute(insert_sql)
     inserted = cur.rowcount
-    logger.info(f"{label:12} {inserted:7}/{attempted:<7} inserted")
+    logger.info(f"{label:12} {inserted}/{attempted:<7} inserted")
 
 
 def run_load(df=None, csv_path=None) -> None:
     """Returns None, but loads DataFrame or CSV data into the database with full ETL process."""
     logger = get_logger()
+
     if df is None and csv_path is None:
         raise ValueError("Provide df or csv_path")
+
     if df is None:
+        if not os.path.exists(csv_path):
+            raise FileNotFoundError(f"File not found: {csv_path}")
         df = pd.read_csv(csv_path)
+
     if df.empty:
-        logger.info("Nothing to load"); 
+        logger.info("Nothing to load")
         return
+
     load_dotenv(".env")
     sales, tags = build_frames(df)
 
@@ -198,7 +208,8 @@ def run_load(df=None, csv_path=None) -> None:
                 RETURNING 1"""
             )
 
-            cur.execute("CREATE TEMP TABLE inserted_sales (sale_id BIGINT, utc_date TIMESTAMP, country_id SMALLINT) ON COMMIT DROP;")
+            cur.execute(
+                "CREATE TEMP TABLE inserted_sales (sale_id BIGINT, utc_date TIMESTAMP, country_id SMALLINT) ON COMMIT DROP;")
 
             cur.execute("""
                 WITH ins AS (
@@ -213,7 +224,7 @@ def run_load(df=None, csv_path=None) -> None:
                 SELECT * FROM ins;
             """)
             new_sales = cur.rowcount
-            logger.info(f"sale{new_sales:7} new rows")
+            logger.info("sale %s new rows", new_sales)
 
             cur.execute("""
                 INSERT INTO sale_track_assignment(track_id, sale_id, sold_for)
@@ -227,7 +238,7 @@ def run_load(df=None, csv_path=None) -> None:
                 WHERE s.track_name IS NOT NULL
                 ON CONFLICT DO NOTHING
                 RETURNING 1""")
-            logger.info(f"sale_track{cur.rowcount:7} rows linked")
+            logger.info("sale_track %s rows linked", cur.rowcount)
 
             cur.execute("""
                 INSERT INTO sale_album_assignment(album_id, sale_id, sold_for, is_physical)
@@ -241,7 +252,7 @@ def run_load(df=None, csv_path=None) -> None:
                 WHERE s.album_name IS NOT NULL
                 ON CONFLICT DO NOTHING
                 RETURNING 1""")
-            logger.info(f"sale_album{cur.rowcount:7} rows linked")
+            logger.info("sale_album %s rows linked", cur.rowcount)
 
             cur.execute("""
                 INSERT INTO sale_merchandise_assignment(merchandise_id, sale_id, sold_for)
@@ -255,7 +266,7 @@ def run_load(df=None, csv_path=None) -> None:
                 WHERE s.merch_name IS NOT NULL
                 ON CONFLICT DO NOTHING
                 RETURNING 1""")
-            logger.info(f"sale_merch{cur.rowcount:7} rows linked")
+            logger.info("sale_merch %s rows linked", cur.rowcount)
 
             cur.execute("""
                 INSERT INTO artist_track_assignment(artist_id, track_id)
@@ -266,7 +277,7 @@ def run_load(df=None, csv_path=None) -> None:
                 WHERE s.track_name IS NOT NULL
                 ON CONFLICT DO NOTHING
                 RETURNING 1""")
-            logger.info(f"artist_track{cur.rowcount:7} rows linked")
+            logger.info("artist_track %s rows linked", cur.rowcount)
 
             cur.execute("""
                 INSERT INTO artist_album_assignment(artist_id, album_id)
@@ -277,7 +288,7 @@ def run_load(df=None, csv_path=None) -> None:
                 WHERE s.album_name IS NOT NULL
                 ON CONFLICT DO NOTHING
                 RETURNING 1""")
-            logger.info(f"artist_album{cur.rowcount:7} rows linked")
+            logger.info("artist_album %s rows linked", cur.rowcount)
 
             cur.execute("""
                 INSERT INTO artist_merchandise_assignment(artist_id, merchandise_id)
@@ -288,7 +299,7 @@ def run_load(df=None, csv_path=None) -> None:
                 WHERE s.merch_name IS NOT NULL
                 ON CONFLICT DO NOTHING
                 RETURNING 1""")
-            logger.info(f"artist_merch{cur.rowcount:7} rows linked")
+            logger.info("artist_merch %s rows linked", cur.rowcount)
 
             cur.execute("""
                 INSERT INTO track_tag_assignment(tag_id, track_id)
@@ -298,7 +309,7 @@ def run_load(df=None, csv_path=None) -> None:
                 JOIN track tr USING (url)
                 ON CONFLICT DO NOTHING
                 RETURNING 1""")
-            logger.info(f"track_tag{cur.rowcount:7} rows linked")
+            logger.info("track_tag %s rows linked", cur.rowcount)
 
             cur.execute("""
                 INSERT INTO album_tag_assignment(tag_id, album_id)
@@ -308,7 +319,7 @@ def run_load(df=None, csv_path=None) -> None:
                 JOIN album al USING (url)
                 ON CONFLICT DO NOTHING
                 RETURNING 1""")
-            logger.info(f"album_tag{cur.rowcount:7} rows linked")
+            logger.info("album_tag %s rows linked", cur.rowcount)
         conn.commit()
         logger.info(f"\nLoaded{len(df):,} rows ✔")
 
