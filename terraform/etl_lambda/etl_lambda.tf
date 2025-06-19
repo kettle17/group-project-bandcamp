@@ -79,6 +79,15 @@ data "aws_iam_policy_document" "etl-lambda-role-permissions-policy-doc" {
       resources = [ "arn:aws:rds-db:eu-west-2:129033205317:dbuser:c17-tracktion-rds/public" ]
     }
 
+      statement {
+      effect = "Allow"
+      actions = [
+        "s3:PutObject"
+      ]
+      resources = [ "arn:aws:rds-db:eu-west-2:129033205317:dbuser:c17-tracktion-rds/public" ]
+    }
+
+
 }
 
 resource "aws_iam_role" "etl-lambda-role" {
