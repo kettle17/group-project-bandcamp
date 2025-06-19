@@ -58,8 +58,8 @@ def return_submit_alert_request():
 def generate_header() -> None:
     """Generates the header of the alerts dashboard."""
     local_css("style.css")
-    LOGO = "../documentation/tracktion_logo.png"
-    st.logo(LOGO, size="large")
+    logo = "../documentation/tracktion_logo.png"
+    st.logo(logo, size="large")
 
     st.markdown(
         "<h1 style='text-align: center;'>Sign up to receive alerts</h1>", unsafe_allow_html=True)
