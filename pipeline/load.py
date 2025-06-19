@@ -120,6 +120,7 @@ def insert_dimension_data(cur: cursor, label: str, count_sql: str, insert_sql: s
 
 def run_load(df=None, csv_path=None) -> None:
     """Returns None, but loads DataFrame or CSV data into the database with full ETL process."""
+
     logger = get_logger()
 
     if df is None and csv_path is None:
