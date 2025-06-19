@@ -1,4 +1,4 @@
-"""Main Streamlit dashboard for live data."""
+"""Page for alerts data."""
 from os import environ as ENV
 from dotenv import load_dotenv
 import psycopg2
@@ -59,10 +59,7 @@ def generate_header() -> None:
     """Generates the header of the alerts dashboard."""
     local_css("style.css")
     LOGO = "../documentation/tracktion_logo.png"
-
-    left_co, cent_co, last_co = st.columns(3)
-    with cent_co:
-        st.image(LOGO)
+    st.logo(LOGO, size="large")
 
     st.markdown(
         "<h1 style='text-align: center;'>Sign up to receive alerts</h1>", unsafe_allow_html=True)
