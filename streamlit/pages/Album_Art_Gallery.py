@@ -33,7 +33,8 @@ if __name__ == "__main__":
     album_df = load_album_data(conn)
     sale_df = load_sale_data(conn)
 
-    st.title("Album Art Gallery")
+    st.markdown(
+        "<h1 style='text-align: center;'>Album Art Gallery</h1>", unsafe_allow_html=True)
 
     sale_df = sale_df.loc[:, ~sale_df.columns.duplicated()]
 

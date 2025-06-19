@@ -143,7 +143,7 @@ def upload_file_to_s3(s3_client, filename, object_name=None):
     if object_name is None:
         object_name = os.path.basename(filename)
     s3_client.upload_file(
-        filename, "c17-tracktion-daily-reports", object_name)
+        filename, "c17-tracktion-daily-reports-and-images", Key=f"report/{object_name}")
 
 
 def generate_pdf_and_upload_to_s3():
@@ -179,6 +179,21 @@ def generate_pdf_and_upload_to_s3():
     s3_client = connect_to_s3_client()
     upload_file_to_s3(
         s3_client, f"daily_bandcamp_report_{date.today()}.pdf")
+
+
+def report_lambda_handler(event, context):
+    """AWS Lambda handler to trigger generating report and loading to s3."""
+    try:
+        generate_pdf_and_upload_to_s3()
+        return {
+            "statusCode": 200,
+            "body": "Daily report uploaded successfully.",
+        }
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "body": f"Failed to generate and upload daily report.: {str(e)}",
+        }
 
 
 if __name__ == "__main__":

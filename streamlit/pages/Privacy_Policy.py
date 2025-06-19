@@ -12,11 +12,10 @@ if __name__ == "__main__":
 
     local_css("style.css")
     LOGO = "../documentation/tracktion_logo.png"
+    st.logo(LOGO, size="large")
 
-    left_co, cent_co, last_co = st.columns(3)
-    with cent_co:
-        st.image(LOGO)
-        st.title("Privacy Policy")
+    st.markdown(
+        "<h1 style='text-align: center;'>Privacy Policy</h1>", unsafe_allow_html=True)
     st.text("""
     1. Introduction
 
