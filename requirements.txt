@@ -11,3 +11,4 @@ bs4
 altair
 streamlit
 streamlit_extras
+streamlit_phone_number

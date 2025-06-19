@@ -1,22 +1,67 @@
 """Page for alerts data."""
+import re
 from os import environ as ENV
 from dotenv import load_dotenv
-import psycopg2
 import streamlit as st
 import streamlit_phone_number
-import re
+
 import pandas as pd
+from Live_Data import get_connection
 
 
 def local_css(file_name):
     """Connects to the style.css script to add a font."""
-    with open(file_name) as f:
+    with open(file_name, encoding='utf-8') as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+
+def get_fresh_connection():
+    """Reconnect with connection if closed or not usable."""
+    conn = get_connection(
+        ENV['DB_HOST'],
+        ENV['DB_NAME'],
+        ENV['DB_USER'],
+        ENV['DB_PASSWORD'],
+        ENV['DB_PORT']
+    )
+    if conn.closed != 0:
+        st.cache_resource.clear()
+        conn = get_connection(
+            ENV['DB_HOST'],
+            ENV['DB_NAME'],
+            ENV['DB_USER'],
+            ENV['DB_PASSWORD'],
+            ENV['DB_PORT']
+        )
+    return conn
+
+
+@st.cache_data
+def load_all_tags() -> pd.DataFrame:
+    """Get all tag names from the database."""
+    with get_fresh_connection() as conn:
+        query = """
+            SELECT tag_name FROM tag;
+            """
+        df = pd.read_sql(query, conn)
+        return df
+
+
+@st.cache_data
+def load_all_artists() -> pd.DataFrame:
+    """Get all artist names from the database."""
+
+    with get_fresh_connection() as conn:
+        query = """
+            SELECT artist_name FROM artist;
+            """
+        df = pd.read_sql(query, conn)
+        return df
 
 
 def check_email_address(email: str) -> bool:
     """Check email address to see if it matches standard regex."""
-    return bool(re.fullmatch("^\S+@\S+\.\S+$", email))
+    return bool(re.fullmatch(r"^\S+@\S+\.\S+$", email))
 
 
 def check_phone_number(phone: str) -> bool:
@@ -30,28 +75,30 @@ def submit_alert_request(artist_or_genre: str, export_topic: str, frequency: str
     choice = st.selectbox("How would you like to receive alerts?",
                           options=['Email', 'Text'])
     if choice == 'Email':
-        input = st.text_input("Please enter your email")
+        user_input = st.text_input("Please enter your email")
     if choice == 'Text':
-        input = streamlit_phone_number.st_phone_number(
+        user_input = streamlit_phone_number.st_phone_number(
             "Phone", placeholder="Please enter your phone number", default_country="GB")
     if st.button("Submit"):
         if choice == 'Email':
-            if check_email_address(input):
+            if check_email_address(user_input):
                 st.session_state.submit_alert_request = {
-                    "selection": artist_or_genre, "topic": export_topic, "frequency": frequency, "contact": input}
+                    "selection": artist_or_genre, "topic": export_topic, "frequency": frequency, "contact": user_input}
                 st.rerun()
             else:
                 st.error("Email not valid", icon="🚨", width="stretch")
         else:
-            if check_phone_number(input):
+            if check_phone_number(user_input):
                 st.session_state.submit_alert_request = {
-                    "selection": artist_or_genre, "topic": export_topic, "frequency": frequency, "contact": input['number']}
+                    "selection": artist_or_genre, "topic": export_topic, "frequency": frequency, "contact": user_input['number']}
                 st.rerun()
             else:
                 st.error("Phone number not valid", icon="🚨", width="stretch")
 
 
-def return_submit_alert_request():
+def return_submit_alert_request() -> dict:
+    """Returns the dictionary status for the submit request.
+    Use with lambda handler."""
     return st.session_state.submit_alert_request
 
 
@@ -70,36 +117,71 @@ if __name__ == "__main__":
 
     generate_header()
 
-    container1 = st.container()
-    container1.markdown("<div class='container1'>", unsafe_allow_html=True)
+    all_tags = load_all_tags()
+    all_artists = load_all_artists()
 
-    headercol1, headercol2, headercol3 = st.columns(3)
-    with headercol3:
-        artist_or_genre = st.selectbox("",
-                                       options=['Artists', 'Genres'])
-    with headercol1:
+    with st.container(height=350):
+
+        headercol1, headercol2, headercol3 = st.columns(3)
+        with headercol3:
+            artist_or_genre = st.selectbox("",
+                                           options=['Artists', 'Genres'])
+        with headercol1:
+            if artist_or_genre == 'Artists':
+                st.title("Artists")
+            else:
+                st.title("Genres")
+
+        summarycol1, summarycol2, summarycol3 = st.columns(
+            3, vertical_alignment="bottom")
+
+        with summarycol2:
+            frequency_summary = st.selectbox("",
+                                             options=['Daily', 'Weekly'], key='summaryselectbox')
+        with summarycol1:
+            st.subheader("Summary data")
+            st.text("Top 10 artists and their sales/popularity")
+        with summarycol3:
+            if st.button("Sign up to alerts", key='summarybutton'):
+                submit_alert_request(
+                    artist_or_genre, 'Summary', frequency_summary)
+            if "submit_alert_request" in st.session_state:
+                return_submit_alert_request()
+
+                st.text("success")
+
+        selectcol1, selectcol2, selectcol3 = st.columns(
+            3, vertical_alignment="bottom")
+        with selectcol1:
+            if artist_or_genre == 'Artists':
+                unique_artists = all_artists['artist_name'].unique()
+                selected_artist = st.selectbox(
+                    "Search artist name", placeholder="Search artist name", options=unique_artists)
+            else:
+                unique_tags = all_tags['tag_name'].unique()
+                selected_genre = st.selectbox(
+                    "Search genre name", placeholder="Search genre name", options=unique_tags)
+
         if artist_or_genre == 'Artists':
-            st.title("Artists")
+            with selectcol2:
+                artist_report = st.selectbox("",
+                                             options=['Daily', 'Weekly'], key='artistselectbox')
+
+            with selectcol3:
+                if st.button("Sign up to alerts", key='artistsummarybutton'):
+                    submit_alert_request(
+                        artist_or_genre, selected_artist, frequency_summary)
+                if "submit_alert_request" in st.session_state:
+                    return_submit_alert_request()
+
         else:
-            st.title("Genres")
+            with selectcol2:
+                genres_report = st.selectbox("",
+                                             options=['Daily', 'Weekly'], key='genreselectbox')
 
-    summarycol1, summarycol2, summarycol3 = st.columns(3)
-
-    with summarycol2:
-        frequency_summary = st.selectbox("",
-                                         options=['Daily', 'Weekly'], key='summaryselectbox')
-    with summarycol1:
-        st.subheader("Summary data")
-        st.text("Top 10 artists and their sales/popularity")
-    with summarycol3:
-        if st.button("Sign up to alerts", key='summarybutton'):
-            print(submit_alert_request(
-                artist_or_genre, 'Summary', frequency_summary))
-        if "submit_alert_request" in st.session_state:
-            print(return_submit_alert_request())
-
-            st.text("success")
-
-    selectcol1, selectcol2, selectcol3 = st.columns(3)
-
-    container1.markdown("</div>", unsafe_allow_html=True)
+            with selectcol3:
+                if st.button("Sign up to alerts", key='genresummarybutton'):
+                    submit_alert_request(
+                        artist_or_genre, selected_genre, frequency_summary)
+                if "submit_alert_request" in st.session_state:
+                    return_submit_alert_request()

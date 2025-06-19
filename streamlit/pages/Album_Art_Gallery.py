@@ -43,6 +43,8 @@ if __name__ == "__main__":
     album_df = album_df.merge(album_popularity, on='album_id', how='left')
     album_df['num_sales'] = album_df['num_sales'].fillna(0).astype(int)
 
+    album_df = album_df.sort_values(by='num_sales', ascending=False).head(250)
+
     album_df = album_df.dropna(
         subset=['art_url', 'url', 'album_name', 'artist_name'])
     album_df = album_df.sort_values(
