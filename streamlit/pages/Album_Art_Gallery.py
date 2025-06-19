@@ -3,7 +3,7 @@ from os import environ as ENV
 import pandas as pd
 from dotenv import load_dotenv
 import streamlit as st
-from Live_Data import get_connection, load_sale_data
+from Home import get_connection, load_sale_data
 
 
 def load_album_data(_conn):
