@@ -83,14 +83,14 @@ def submit_alert_request(artist_or_genre: str, export_topic: str, frequency: str
         if choice == 'Email':
             if check_email_address(user_input):
                 st.session_state.submit_alert_request = {
-                    "selection": artist_or_genre, "topic": export_topic, "frequency": frequency, "contact": user_input}
+                    "selection": artist_or_genre, "topic": export_topic, "frequency": frequency, "format": choice, "contact": user_input}
                 st.rerun()
             else:
                 st.error("Email not valid", icon="🚨", width="stretch")
         else:
             if check_phone_number(user_input):
                 st.session_state.submit_alert_request = {
-                    "selection": artist_or_genre, "topic": export_topic, "frequency": frequency, "contact": user_input['number']}
+                    "selection": artist_or_genre, "topic": export_topic, "frequency": frequency, "format": choice, "contact": user_input['number']}
                 st.rerun()
             else:
                 st.error("Phone number not valid", icon="🚨", width="stretch")
@@ -120,11 +120,28 @@ if __name__ == "__main__":
     all_tags = load_all_tags()
     all_artists = load_all_artists()
 
-    with st.container(height=350):
+    #
+
+    st.markdown("""
+    <style>
+    div.stButton > button:first-child:hover {
+        background-color: #FF8C00;
+        color: white;
+    }    
+    div.stButton > button {
+        display: block;
+        margin: 0 auto;
+    }
+    </style>
+                
+                
+    """, unsafe_allow_html=True)
+
+    with st.container(height=475):
 
         headercol1, headercol2, headercol3 = st.columns(3)
         with headercol3:
-            artist_or_genre = st.selectbox("",
+            artist_or_genre = st.selectbox("Alert topic",
                                            options=['Artists', 'Genres'])
         with headercol1:
             if artist_or_genre == 'Artists':
@@ -136,7 +153,7 @@ if __name__ == "__main__":
             3, vertical_alignment="bottom")
 
         with summarycol2:
-            frequency_summary = st.selectbox("",
+            frequency_summary = st.selectbox("Frequency",
                                              options=['Daily', 'Weekly'], key='summaryselectbox')
         with summarycol1:
             st.subheader("Summary data")
@@ -145,10 +162,22 @@ if __name__ == "__main__":
             if st.button("Sign up to alerts", key='summarybutton'):
                 submit_alert_request(
                     artist_or_genre, 'Summary', frequency_summary)
-            if "submit_alert_request" in st.session_state:
-                return_submit_alert_request()
 
-                st.text("success")
+        if artist_or_genre == 'Artists':
+            trendingcol1, trendingcol2, trendingcol3 = st.columns(
+                3, vertical_alignment="bottom")
+
+            with trendingcol2:
+                trending_summary = st.selectbox("Frequency",
+                                                options=['Daily', 'Weekly'], key='trendingselectbox')
+            with trendingcol1:
+                st.subheader("Trending data")
+                st.text(
+                    "Artists that have recently experienced a burst in popularity")
+            with trendingcol3:
+                if st.button("Sign up to alerts", key='trendingbutton'):
+                    submit_alert_request(
+                        artist_or_genre, 'Trending', frequency_summary)
 
         selectcol1, selectcol2, selectcol3 = st.columns(
             3, vertical_alignment="bottom")
@@ -164,7 +193,7 @@ if __name__ == "__main__":
 
         if artist_or_genre == 'Artists':
             with selectcol2:
-                artist_report = st.selectbox("",
+                artist_report = st.selectbox("Frequency",
                                              options=['Daily', 'Weekly'], key='artistselectbox')
 
             with selectcol3:
@@ -176,7 +205,7 @@ if __name__ == "__main__":
 
         else:
             with selectcol2:
-                genres_report = st.selectbox("",
+                genres_report = st.selectbox("Frequency",
                                              options=['Daily', 'Weekly'], key='genreselectbox')
 
             with selectcol3:
@@ -185,3 +214,12 @@ if __name__ == "__main__":
                         artist_or_genre, selected_genre, frequency_summary)
                 if "submit_alert_request" in st.session_state:
                     return_submit_alert_request()
+
+    endcol1, endcol2, endcol3 = st.columns(3)
+    with endcol1:
+        if "submit_alert_request" in st.session_state:
+            print(return_submit_alert_request())
+
+            st.text("Successfully sent alert!")
+    with endcol3:
+        st.button("Unsubscribe from alerts")
