@@ -26,4 +26,7 @@ DB_PASSWORD=your-db-password
 DB_HOST=your-db-host-ip
 DB_PORT=your-db-port
 DB_NAME=your-db-name
+
+AWS_ACCESS_KEY_ID=access-key
+AWS_SECRET_ACCESS_KEY=secret-access-key
 ```
