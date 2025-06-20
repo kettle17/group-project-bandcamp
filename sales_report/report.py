@@ -182,12 +182,13 @@ def send_email_with_attachment(path: str):
 
     msg.attach(part)
     ses_client = client('ses', region_name='eu-west-2')
+    logger.info("Attempting to email report to {MVP_EMAIL}")
     response = ses_client.send_raw_email(
         Source=MVP_EMAIL,
         Destinations=[MVP_EMAIL],
         RawMessage={'Data': msg.as_string()}
     )
-    print(response)
+    logger.info("Email response: {response}")
 
 
 def generate_pdf_and_upload_to_s3():
@@ -224,8 +225,10 @@ def generate_pdf_and_upload_to_s3():
                     total_album_revenue, total_track_revenue, total_merchandise_revenue)
     logger.info("Report successfully generated.")
     s3_client = connect_to_s3_client(logger)
+    report_path = f"/tmp/daily_bandcamp_report_{date.today()}.pdf"
     upload_file_to_s3(
-        logger, s3_client, f"/tmp/daily_bandcamp_report_{date.today()}.pdf")
+        logger, s3_client, report_path)
+    send_email_with_attachment(report_path)
 
 
 def report_lambda_handler(event, context):
