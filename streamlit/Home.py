@@ -1,15 +1,14 @@
 """Main Streamlit dashboard for live data: Artist-overview dashboard(v2)"""
-import pandas as pd
+from datetime import timezone
+from os import environ as ENV
 import psycopg2
 import plotly.express as px
-import streamlit as st
 import country_converter
-from datetime import timedelta, timezone
 from dotenv import load_dotenv
 from botocore.config import Config
 import boto3
-from os import environ as ENV
-
+import pandas as pd
+import streamlit as st
 S3_ARTIST_IMG_PATH = "https://c17-tracktion-daily-reports.s3.eu-west-2.amazonaws.com/artist_images/"
 
 st.set_page_config(
@@ -34,11 +33,13 @@ def get_connection(host, dbname, user, password, port):
 def local_css(file_name):
     """Connects to the style.css script to add a font."""
     with open(file_name) as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+        st.markdown(f"<style>{f.read()}</style>",
+                    unsafe_allow_html=True)
 
 
 @st.cache_data
 def run_query(_conn, sql, params=None):
+    """Runs the queries for average summaries."""
     return pd.read_sql(sql, _conn, params=params)
 
 
@@ -57,6 +58,7 @@ def load_sale_data(_conn):
 
 @st.cache_data
 def _load_combined_sale_data(_conn):
+    """Loads the combined sale data."""
     sql = """
       SELECT s.*, c.*,
 
@@ -88,9 +90,11 @@ def _load_combined_sale_data(_conn):
 
 
 def show_artist_image(artist_name: str):
+    """Shows the artist image on dashboard."""
     slug = "_".join(artist_name.lower().split()) + ".jpg"
     bucket = "c17-tracktion-daily-reports-and-images"
-    st.markdown("### Artist Portrait")
+    st.markdown(
+        "<div style='text-align: center;'><h2>Artist Portrait</h2></div>", unsafe_allow_html=True)
     cfg = Config(region_name="eu-west-2", s3={"addressing_style": "virtual"})
     s3 = boto3.client(
         "s3",
@@ -113,6 +117,7 @@ def show_artist_image(artist_name: str):
 
 @st.cache_data(ttl=900)
 def _top_media(_c, artist, s, e, n=5):
+    """Returns the top media of each artist."""
     sql = """
     WITH win AS (SELECT sale_id FROM sale
                  WHERE utc_date BETWEEN %(s)s AND %(e)s),
@@ -166,6 +171,7 @@ def _top_media(_c, artist, s, e, n=5):
 
 
 def avg(series):
+    """Calculates the average of a series of numbers."""
     v = series[series > 0].mean()
     return 0 if pd.isna(v) else v
 
@@ -196,6 +202,7 @@ def headline_box(filtered_df: pd.DataFrame, col):
 
 @st.cache_data(ttl=600)
 def _time_series(_c, artist, s, e, bucket):
+    """Runs the following queries."""
     sql = f"""
     WITH win AS (
         SELECT sale_id, date_trunc('{bucket}', utc_date) AS p
@@ -273,18 +280,26 @@ def show_time_series_fixed(filtered_df: pd.DataFrame, choice: str):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def filter_bar(sale_df: pd.DataFrame):
+def filter_bar(sale_df: pd.DataFrame, default_artist: str = "Four Tet"):
     """Sidebar widget: artist selector + date-range filter."""
-    st.subheader("🔍 Filters")
+    st.markdown(
+        "<div style='text-align: center;'><h2>Filters</h2></div>", unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([3, 4, 4])
+    another_spacer, spacer_left, col1, col2, col3, spacer_right = st.columns(
+        [1, 4, 4, 4, 4, 1])
 
     with col1:
-        print(sale_df.columns)
+        artist_options = sale_df["artist_name"].dropna().unique()
+        default_index = (
+            list(artist_options).index(default_artist)
+            if default_artist in artist_options
+            else 0
+        )
 
         artist = st.selectbox(
             "Artist",
-            options=sale_df["artist_name"].dropna().unique(),
+            options=artist_options,
+            index=default_index,
             key="artist",
         )
     with col2:
@@ -326,17 +341,12 @@ def filter_bar(sale_df: pd.DataFrame):
         delta = pd.Timedelta(days=7)
         start_ts = end_ts - delta
 
-    # with col3:
-    #     if st.button("🔄 Reset"):
-    #         for k in ("artist", "range"):
-    #             st.session_state.pop(k, None)
-    #         st.experimental_rerun()
-
     return artist, start_ts, end_ts, choice
 
 
 @st.cache_data(ttl=900)
 def _top_items(_c, artist, s, e, n=3):
+    """Returns the top items sold per artist."""
     sql = """
     WITH win AS (SELECT sale_id FROM sale WHERE utc_date BETWEEN %(s)s AND %(e)s)
     SELECT tr.track_name        AS title,
@@ -357,8 +367,10 @@ def _top_items(_c, artist, s, e, n=3):
 
 
 def show_top_media(conn, artist, s, e):
+    """Shows the top media items onto the dashboard."""
     data = _top_media(conn, artist, s, e, n=10)
-    st.markdown("### Top Media Sales")
+    st.markdown(
+        "<div style='text-align: center;'><h2>Top Media Sales</h2></div>", unsafe_allow_html=True)
 
     if data.empty:
         st.info("No sales in this period")
@@ -385,6 +397,7 @@ def show_top_media(conn, artist, s, e):
 
 
 def show_choropleth(df: pd.DataFrame):
+    """Shows the chloropleth map onto streamlit."""
     df = df.assign(
         revenue=lambda d: (
             d["track_sold_for"].fillna(0)
@@ -392,7 +405,9 @@ def show_choropleth(df: pd.DataFrame):
             + d["merch_sold_for"].fillna(0)
         )
     )
-    st.markdown(f"### Global Purchase Map")
+    st.markdown(
+        "<div style='text-align: center;'><h2>Global Purchase Map</h2></div>",
+        unsafe_allow_html=True)
     geo = (df.groupby("country_name", as_index=False)
              .agg(total_revenue=("revenue", "sum")))
 
@@ -403,20 +418,20 @@ def show_choropleth(df: pd.DataFrame):
         geo, locations="iso_alpha", color="total_revenue",
         hover_name="country_name",
         hover_data={"total_revenue": ":,.2f"},
-        color_continuous_scale=px.colors.sequential.Agsunset,
+        color_continuous_scale=px.colors.sequential.Oranges,
     )
     fig.update_layout(
         template="plotly_dark",
-        paper_bgcolor="#000",
-        plot_bgcolor="#000",
+        paper_bgcolor="#181818",
+        plot_bgcolor="#181818",
         margin=dict(l=0, r=0, t=0, b=0),
         dragmode='pan',
     )
 
     fig.update_geos(
-        bgcolor="#000",
+        bgcolor="#181818",
         landcolor="rgba(255,255,255,0.05)",
-        lakecolor="#000",
+        lakecolor="#181818",
         coastlinecolor="grey",
         showcountries=True,
         countrycolor="grey",
@@ -426,12 +441,13 @@ def show_choropleth(df: pd.DataFrame):
 
 
 def main():
+    """Main function that calls all of the previous functions."""
     load_dotenv()
 
     with get_connection(ENV['DB_HOST'], ENV['DB_NAME'], ENV['DB_USER'],
                         ENV['DB_PASSWORD'], ENV['DB_PORT']) as conn:
         df = _load_combined_sale_data(conn)
-        print(df)
+
         artist, start_date, end_date, choice = filter_bar(df)
 
         filtered_df = df[
@@ -455,6 +471,7 @@ def main():
         bucket = freq_map.get(choice, "week")
 
         ts_df = _time_series(conn, artist, start_date, end_date, bucket)
+        show_choropleth(filtered_df)
 
         if ts_df.empty:
             st.info("No revenue data for this period")
@@ -466,13 +483,19 @@ def main():
             for col in required_cols:
                 if col not in ts_df_pivot.columns:
                     ts_df_pivot[col] = 0
-            st.markdown(f"### Revenue by {choice}")
+            left_c, center_c, right_c = st.columns(3)
+            with center_c:
+                st.markdown(
+                    f"<div style='text-align: center;'><h2>Revenue by {choice}</h2></div>",
+                    unsafe_allow_html=True)
+
             fig = px.line(
                 ts_df_pivot,
                 x="p",
                 y=required_cols,
                 markers=True,
-                labels={"p": "Time", "value": "£", "variable": "Product"}
+                labels={"p": "Time", "value": "£", "variable": "Product"},
+                color_discrete_sequence=["#FFA500", "#FF8C00", "#FF4500"]
             )
             fig.update_layout(
                 template="plotly_dark",
@@ -488,11 +511,12 @@ def main():
             )
             st.plotly_chart(fig, use_container_width=True)
 
-        show_choropleth(filtered_df)
-
 
 if __name__ == "__main__":
     local_css("style.css")
     LOGO = "../documentation/tracktion_logo.png"
-    st.logo(LOGO, size="large")
+
+    left_co, cent_co, last_co = st.columns(3)
+    with cent_co:
+        st.image(LOGO)
     main()

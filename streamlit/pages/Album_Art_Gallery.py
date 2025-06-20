@@ -7,6 +7,7 @@ from Home import get_connection, load_sale_data
 
 
 def load_album_data(_conn):
+    """Loads the album data."""
     load_dotenv()
 
     query = """
@@ -56,7 +57,10 @@ if __name__ == "__main__":
     for idx, row in album_df.iterrows():
         col = cols[idx % num_cols]
         count = row['num_sales']
-        caption = f"{row['artist_name']} – {row['album_name']} ({count} sale{'s' if count != 1 else ''})"
+        caption = (
+            f"{row['artist_name']} – {row['album_name']} "
+            f"<span style='color: #FF8C00 ;'>({count} sale{'s' if count != 1 else ''})</span>"
+        )
 
         with col:
             st.markdown(

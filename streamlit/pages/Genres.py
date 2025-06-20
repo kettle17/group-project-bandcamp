@@ -133,11 +133,14 @@ def generate_wordcloud_genres(chosen_df: pd.DataFrame, chosen_metric: str) -> No
     """Generates a wordcloud image for the dashboard, showing the most
     popular genres for the chosen arguments."""
     word_freq = dict(zip(chosen_df['tag_name'], chosen_df[chosen_metric]))
-    wordcloud = WordCloud(width=800, height=400,
-                          background_color='white').generate_from_frequencies(word_freq)
+    wordcloud = WordCloud(
+        width=800,
+        height=400,
+        background_color='#181818',
+        colormap='Oranges'
+    ).generate_from_frequencies(word_freq)
     image = wordcloud.to_image()
-    st.image(
-        image, use_container_width=True)
+    st.image(image, use_container_width=True)
 
 
 def get_3_by_3_top_albums(chosen_df: pd.DataFrame, selected_genre: str, album: bool):
@@ -221,26 +224,54 @@ def display_genre_menu() -> None:
         unique_tags = popular_album_and_track_genres['tag_name'].unique()
         selected_genre = st.selectbox("Select a genre", options=unique_tags)
 
-    st.subheader(f"Genre data for {selected_genre} music")
+    st.markdown(
+        f"<div style='text-align: center;'><h1>Genre data for {selected_genre} music</h1></div>", unsafe_allow_html=True)
 
     data_col1, data_col2 = st.columns(2)
 
     with data_col1:
-        st.metric(label="Overall popularity",
-                  value=f"#{return_genre_popularity_position(
-                      popular_album_and_track_genres, selected_genre)}")
+        st.markdown(
+            f"""
+            <div style="text-align: center;">
+                <h2>Overall popularity</h2>
+                <p style="font-size: 36px; margin: 0; color: #FF8C00;">
+                    #{return_genre_popularity_position(popular_album_and_track_genres, selected_genre)}
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
     with data_col2:
-        st.metric(label="Amount sold",
-                  value=f"£{(round(popular_album_and_track_genres.loc[popular_album_and_track_genres['tag_name']
-                                                                      == selected_genre, 'total_revenue'].iloc[0], 2)):.2f}")
+        total_revenue = round(
+            popular_album_and_track_genres.loc[
+                popular_album_and_track_genres['tag_name'] == selected_genre,
+                'total_revenue'
+            ].iloc[0],
+            2
+        )
+
+        st.markdown(
+            f"""
+            <div style="text-align: center;">
+                <h2>Amount sold</h2>
+                <p style="font-size: 36px; margin: 0; color: #FF8C00;">
+                    £{total_revenue:.2f}
+                </p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
     chart_col1, chart_col2 = st.columns(2)
 
     with chart_col1:
-        st.subheader("Popular albums right now in this genre")
+        st.markdown(
+            f"<div style='text-align: center;'><h4>Popular albums right now in this genre</h4></div>", unsafe_allow_html=True)
         get_3_by_3_top_albums(genre_album_data, selected_genre, True)
     with chart_col2:
-        st.subheader("Popular tracks right now in this genre")
+        st.markdown(
+            f"<div style='text-align: center;'><h4>Popular tracks right now in this genre</h4></div>", unsafe_allow_html=True)
         get_3_by_3_top_albums(genre_track_data, selected_genre, False)
 
 
@@ -267,8 +298,6 @@ def display_wordcloud_menu() -> None:
     popular_album_genres_cloud = find_most_popular_tags(genre_album_data_cloud)
     popular_album_and_track_genres1 = pd.concat(
         [popular_track_genres_cloud, popular_album_genres_cloud], ignore_index=True)
-
-    st.subheader("Word Cloud")
 
     if dataset_choice == "Albums":
         generate_wordcloud_genres(popular_album_genres_cloud, metric_choice)
