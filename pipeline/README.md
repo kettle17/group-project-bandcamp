@@ -6,6 +6,7 @@ We will also use a web scraper to gain additional data such as tag data and rele
 ## 📁 File Structure
 
 ### 📃 ETL Scripts
+
 - `extract.py` – Extracts Bandcamp sales data and saves to CSV  
 - `web_scraper.py` - Extracts data by scraping the api.
 - `transform.py` – Cleans and transforms data for loading  

@@ -21,7 +21,6 @@ terraform/
     ├── database.tf           # Terraform setup for the RDS database.
     ├── s3_bucket.tf          # Terraform setup for the S3 bucket.
     ├── variables.tf          # Terraform variables for database architecture.
-    
 ```
 ---
 
