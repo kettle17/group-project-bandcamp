@@ -12,7 +12,7 @@ from pandas import DataFrame
 
 def get_db_connection() -> connection:
     """Returns a psycopg2 connection."""
-    load_dotenv('.env')
+
     return psycopg2.connect(
         user=ENV["DB_USER"],
         password=ENV["DB_PASSWORD"],
@@ -134,6 +134,7 @@ def get_trending_artists_alert():
     """The main function that combines all the logic for querying the database and checking for recently trending artists
      to generate an alerts message."""
 
+    load_dotenv('.env')
     conn = get_db_connection()
     yesterday = date.today() - timedelta(days=1)
     two_days_ago = date.today() - timedelta(days=2)
