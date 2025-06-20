@@ -120,8 +120,6 @@ if __name__ == "__main__":
     all_tags = load_all_tags()
     all_artists = load_all_artists()
 
-    #
-
     st.markdown("""
     <style>
     div.stButton > button:first-child:hover {
