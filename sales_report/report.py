@@ -7,6 +7,9 @@ import os
 from os import environ as ENV
 from datetime import date
 from datetime import timedelta
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 from dotenv import load_dotenv
 import psycopg2
@@ -22,6 +25,8 @@ from queries import (get_top_artists_by_album_sales, get_top_artists_by_track_sa
                      get_top_genres_by_album_chart, get_top_genres_by_track_chart)
 
 from pdf_class import PDFReport
+
+MVP_EMAIL = "trainee.xac.parnell@sigmalabs.co.uk"
 
 
 def get_logger():
@@ -159,6 +164,30 @@ def upload_file_to_s3(logger, s3_client, filename, object_name=None):
     s3_client.upload_file(
         filename, "c17-tracktion-daily-reports-and-images", Key=f"report/{object_name}")
     logger.info("Successfully uploaded to S3.")
+
+def send_email_with_attachment(path: str):
+    """Sends an email via AWS SES."""
+    logger = get_logger()
+    msg = MIMEMultipart()
+    msg['Subject'] = "Tracktion Analytics - Daily Report"
+    msg['From'] = MVP_EMAIL
+    msg['To'] = MVP_EMAIL
+
+    body = MIMEText("Please find the attached PDF summary pulled from BandCamp.", "plain")
+    msg.attach(body)
+    logger.info("Building email...")
+    with open(path, 'rb') as attachment:
+        part = MIMEApplication(attachment.read())
+        part.add_header('Content-Disposition', 'attachment', filename=path)
+
+    msg.attach(part)
+    ses_client = client('ses', region_name='eu-west-2')
+    response = ses_client.send_raw_email(
+        Source=MVP_EMAIL,
+        Destinations=[MVP_EMAIL],
+        RawMessage={'Data': msg.as_string()}
+    )
+    print(response)
 
 
 def generate_pdf_and_upload_to_s3():
