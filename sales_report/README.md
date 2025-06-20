@@ -4,11 +4,11 @@ This directory contains the script for running an automated reporting pipeline t
 ## 📁 File Structure
 
 report/
-`queries.py` - Queries data from the RDS PostgreSQL database
-`pdf_class.py` - Defines the PDF structure and styling (via FPDF)
-`report.py` - Core logic to generate the report, upload to S3
-`Dockerfile` - Dockerfile for containerising the report script
-`tracktion_logo_transparent_light.png` - Logo image used in the PDF header
+- `queries.py` - Queries data from the RDS PostgreSQL database
+- `pdf_class.py` - Defines the PDF structure and styling (via FPDF)
+- `report.py` - Core logic to generate the report, upload to S3
+- `Dockerfile` - Dockerfile for containerising the report script
+- `tracktion_logo_transparent_light.png` - Logo image used in the PDF header
 
 
 This directory:
