@@ -182,13 +182,13 @@ def send_email_with_attachment(path: str):
 
     msg.attach(part)
     ses_client = client('ses', region_name='eu-west-2')
-    logger.info("Attempting to email report to {MVP_EMAIL}")
+    logger.info(f"Attempting to email report to {MVP_EMAIL}")
     response = ses_client.send_raw_email(
         Source=MVP_EMAIL,
         Destinations=[MVP_EMAIL],
         RawMessage={'Data': msg.as_string()}
     )
-    logger.info("Email response: {response}")
+    logger.info("Email response: %s", response)
 
 
 def generate_pdf_and_upload_to_s3():
