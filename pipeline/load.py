@@ -79,7 +79,8 @@ def build_frames(df: pd.DataFrame) -> tuple[pd.DataFrame, pd.DataFrame]:
     sales["artist_name"] = df["artist_name"].astype(str).str[:ARTIST_LEN]
     sales["slug_type"], sales["item_type"] = df["slug_type"], df["item_type"]
     sales["url"], sales["art_url"] = df["url"].astype(str), df["art_url"]
-    sales["release_date"] = pd.to_datetime(df["release_date"], errors="coerce")
+    sales["release_date"] = pd.to_datetime(
+        df["release_date"], errors="coerce", format="%Y-%m-%d")
     sales["sold_for"] = df["sold_for"]
 
     item_description = df["item_description"].fillna("")
