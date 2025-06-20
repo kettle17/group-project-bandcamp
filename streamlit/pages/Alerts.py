@@ -120,6 +120,23 @@ if __name__ == "__main__":
     all_tags = load_all_tags()
     all_artists = load_all_artists()
 
+    #
+
+    st.markdown("""
+    <style>
+    div.stButton > button:first-child:hover {
+        background-color: #FF8C00;
+        color: white;
+    }    
+    div.stButton > button {
+        display: block;
+        margin: 0 auto;
+    }
+    </style>
+                
+                
+    """, unsafe_allow_html=True)
+
     with st.container(height=475):
 
         headercol1, headercol2, headercol3 = st.columns(3)
