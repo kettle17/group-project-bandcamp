@@ -18,7 +18,7 @@ The data is visualised using Streamlit, a lightweight web app framework chosen f
 ├── terraform/            # Infrastructure-as-code files, including Docker configuration for the ETL pipeline.
 ├── README.md             # This file!
 ├── requirements.txt      # Text file containing external library names which are required for the project.  
-├── setup.sh              # A Bash script to create a virtual environment and install all dependencies listed in requirements.txt.
+└── setup.sh              # A Bash script to create a virtual environment and install all dependencies listed in requirements.txt.
 ```
 
 ## Setting Up the Environment
