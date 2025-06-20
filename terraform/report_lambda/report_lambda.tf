@@ -88,6 +88,12 @@ data "aws_iam_policy_document" "report-lambda-role-permissions-policy-doc" {
 
     }
 
+    statement {
+    effect = "Allow"
+    actions = ["ses:SendRawEmail", "ses:SendEmail"]
+    resources = ["*"]
+    }
+
 
 }
 
