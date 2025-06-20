@@ -511,45 +511,6 @@ def main():
             )
             st.plotly_chart(fig, use_container_width=True)
 
-        st.markdown(
-            f"<div style='text-align: center;'><h2>Free Downloads vs Revenue (per Artist)</h2></div>",
-            unsafe_allow_html=True)
-
-        free_downloads_df = (
-            filtered_df[filtered_df["track_sold_for"] == 0]
-            .groupby("artist_name")
-            .size()
-            .reset_index(name="free_downloads")
-        )
-
-        revenue_df = (
-            filtered_df[filtered_df["track_sold_for"] > 0]
-            .groupby("artist_name")["track_sold_for"]
-            .sum()
-            .reset_index(name="total_revenue")
-        )
-
-        summary_df = pd.merge(free_downloads_df, revenue_df,
-                              on="artist_name", how="inner")
-
-        if not summary_df.empty:
-            fig = px.scatter(
-                summary_df,
-                x="free_downloads",
-                y="total_revenue",
-                text="artist_name",
-                title="Free Downloads (sold_for = 0) vs Revenue",
-                labels={"free_downloads": "Free Downloads",
-                        "total_revenue": "Revenue (£)"},
-                color="artist_name",
-                color_discrete_sequence=px.colors.sequential.Oranges
-            )
-            fig.update_traces(textposition="top center")
-            fig.update_layout(template="plotly_dark", height=400)
-            st.plotly_chart(fig, use_container_width=True)
-        else:
-            st.info("No data to display for free downloads vs revenue.")
-
 
 if __name__ == "__main__":
     local_css("style.css")
