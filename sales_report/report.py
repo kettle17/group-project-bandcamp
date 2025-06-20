@@ -1,6 +1,8 @@
 """This script queries the database for the previous day's sales
 and generates a pdf report."""
 
+from logging import getLogger, INFO, StreamHandler
+from sys import stdout
 import os
 from os import environ as ENV
 from datetime import date
@@ -22,6 +24,18 @@ from queries import (get_top_artists_by_album_sales, get_top_artists_by_track_sa
 from pdf_class import PDFReport
 
 
+def get_logger():
+    """Return logger with desired config."""
+    return getLogger(__name__)
+
+
+def set_logger():
+    """Set logger configuration."""
+    logger = getLogger(__name__)
+    logger.setLevel(INFO)
+    logger.addHandler(StreamHandler(stdout))
+
+
 def get_db_connection() -> connection:
     """Returns a psycopg2 connection."""
     load_dotenv('.env')
@@ -35,12 +49,30 @@ def get_db_connection() -> connection:
     )
 
 
+def generate_charts(top_artists_by_album_df, top_artists_by_track_df, top_genres_by_album_df, top_genres_by_track_df):
+    """Generates the bar charts for the top 10 artists and genres."""
+
+    top_artists_by_album_chart = get_top_artists_by_album_chart(
+        top_artists_by_album_df)
+    top_artists_by_track_chart = get_top_artists_by_tracks_chart(
+        top_artists_by_track_df)
+    top_genres_by_album_chart = get_top_genres_by_album_chart(
+        top_genres_by_album_df)
+    top_genres_by_track_chart = get_top_genres_by_track_chart(
+        top_genres_by_track_df)
+
+    top_artists_by_album_chart.save("/tmp/top_artists_by_album.png", "png")
+    top_artists_by_track_chart.save("/tmp/top_artists_by_track.png", "png")
+    top_genres_by_album_chart.save("/tmp/top_genres_by_album.png", "png")
+    top_genres_by_track_chart.save("/tmp/top_genres_by_track.png", "png")
+
+
 def generate_report(total_album_sales, total_track_sales, total_merch_sales,
                     total_album_revenue, total_track_revenue, total_merch_revenue,
-                    top_artists_by_album_chart="top_artists_by_album.png",
-                    top_artists_by_track_chart="top_artists_by_track.png",
-                    top_genres_by_album_chart="top_artists_by_album.png",
-                    top_genres_by_track_chart="top_artists_by_track.png"):
+                    top_artists_by_album_chart="/tmp/top_artists_by_album.png",
+                    top_artists_by_track_chart="/tmp/top_artists_by_track.png",
+                    top_genres_by_album_chart="/tmp/top_artists_by_album.png",
+                    top_genres_by_track_chart="/tmp/top_artists_by_track.png"):
     """Generates a pdf report of the previous day's sales."""
 
     yesterday = date.today() - timedelta(days=1)
@@ -109,46 +141,31 @@ def generate_report(total_album_sales, total_track_sales, total_merch_sales,
     pdf.cell(
         60, 8, f"Total revenue for merchandise: {total_merch_revenue}", ln=True)
 
-    pdf.output(f"daily_bandcamp_report_{date.today()}.pdf")
+    pdf.output(f"/tmp/daily_bandcamp_report_{date.today()}.pdf")
 
 
-def generate_charts(top_artists_by_album_df, top_artists_by_track_df, top_genres_by_album_df, top_genres_by_track_df):
-    """Generates the bar charts for the top 10 artists and genres."""
-
-    top_artists_by_album_chart = get_top_artists_by_album_chart(
-        top_artists_by_album_df)
-    top_artists_by_track_chart = get_top_artists_by_tracks_chart(
-        top_artists_by_track_df)
-    top_genres_by_album_chart = get_top_genres_by_album_chart(
-        top_genres_by_album_df)
-    top_genres_by_track_chart = get_top_genres_by_track_chart(
-        top_genres_by_track_df)
-
-    top_artists_by_album_chart.save("top_artists_by_album.png", "png")
-    top_artists_by_track_chart.save("top_artists_by_track.png", "png")
-    top_genres_by_album_chart.save("top_genres_by_album.png", "png")
-    top_genres_by_track_chart.save("top_genres_by_track.png", "png")
-
-
-def connect_to_s3_client() -> client:
+def connect_to_s3_client(logger) -> client:
     """Returns a connection to s3 bucket."""
-    return client("s3", aws_access_key_id=ENV["AWS_ACCESS_KEY_ID"],
-                  aws_secret_access_key=ENV["AWS_SECRET_ACCESS_KEY"])
+    logger.info("Connecting to S3...")
+    return client("s3")
 
 
-def upload_file_to_s3(s3_client, filename, object_name=None):
+def upload_file_to_s3(logger, s3_client, filename, object_name=None):
     """Uploads the pdf file to an s3 bucket."""
+    logger.info("Uploading to S3...")
 
-    object_name = filename
     if object_name is None:
         object_name = os.path.basename(filename)
     s3_client.upload_file(
         filename, "c17-tracktion-daily-reports-and-images", Key=f"report/{object_name}")
+    logger.info("Successfully uploaded to S3.")
 
 
 def generate_pdf_and_upload_to_s3():
     """Generates a pdf report and stores it in an s3 bucket."""
 
+    set_logger()
+    logger = get_logger()
     conn = get_db_connection()
     top_artists_by_album_df = get_top_artists_by_album_sales(conn)
     top_artists_by_track_df = get_top_artists_by_track_sales(conn)
@@ -157,28 +174,29 @@ def generate_pdf_and_upload_to_s3():
 
     generate_charts(top_artists_by_album_df, top_artists_by_track_df,
                     top_genres_by_album_df, top_genres_by_track_df)
+    logger.info("Successfully generated visualisations.")
 
     total_sales = get_total_sale_transactions(conn)
     total_sales_categorised = get_total_sale_transactions_categorised(conn)
     total_revenue = get_total_revenue_made(conn)
     total_revenue_categorised = get_total_revenue_made_categorised(conn)
+    logger.info("Getting relevant figures.")
 
-    total_sales_figure = total_sales[0]["total_sales"]
     total_album_sales = total_sales_categorised[0]["count"]
     total_track_sales = total_sales_categorised[1]["count"]
     total_merchandise_sales = total_sales_categorised[2]["count"]
+    logger.info("Extracting statistics.")
 
-    total_revenue_figure = float(total_revenue[0]["total_revenue"])
     total_album_revenue = total_revenue_categorised[0]["total_revenue"]
     total_track_revenue = total_revenue_categorised[1]["total_revenue"]
     total_merchandise_revenue = total_revenue_categorised[2]["total_revenue"]
-
+    logger.info("Generating report.")
     generate_report(total_album_sales, total_track_sales, total_merchandise_sales,
                     total_album_revenue, total_track_revenue, total_merchandise_revenue)
-
-    s3_client = connect_to_s3_client()
+    logger.info("Report successfully generated.")
+    s3_client = connect_to_s3_client(logger)
     upload_file_to_s3(
-        s3_client, f"daily_bandcamp_report_{date.today()}.pdf")
+        logger, s3_client, f"/tmp/daily_bandcamp_report_{date.today()}.pdf")
 
 
 def report_lambda_handler(event, context):
