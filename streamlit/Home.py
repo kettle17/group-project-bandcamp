@@ -1,4 +1,4 @@
-"""Artist-overview dashboard (v2)"""
+"""Main Streamlit dashboard for live data: Artist-overview dashboard(v2)"""
 import pandas as pd
 import psycopg2
 import plotly.express as px
@@ -12,12 +12,29 @@ from os import environ as ENV
 
 S3_ARTIST_IMG_PATH = "https://c17-tracktion-daily-reports.s3.eu-west-2.amazonaws.com/artist_images/"
 
+st.set_page_config(
+    page_title="Tracktion",
+    page_icon="🎶",
+    layout="wide"
+)
 
-def get_connection():
-    return psycopg2.connect(
-        host=ENV["DB_HOST"], database=ENV["DB_NAME"],
-        user=ENV["DB_USER"], password=ENV["DB_PASSWORD"], port=ENV["DB_PORT"]
+
+def get_connection(host, dbname, user, password, port):
+    """Create and cache a SQL Server connection using pyodbc."""
+    connection = psycopg2.connect(
+        host=host,
+        database=dbname,
+        user=user,
+        password=password,
+        port=port
     )
+    return connection
+
+
+def local_css(file_name):
+    """Connects to the style.css script to add a font."""
+    with open(file_name) as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
 @st.cache_data
@@ -26,7 +43,20 @@ def run_query(_conn, sql, params=None):
 
 
 @st.cache_data
-def _load_sale_data(_conn):
+def load_sale_data(_conn):
+    """Loads the required data by querying the database."""
+    query = """SELECT s.*, c.*, a.*, ar.*, saa.* FROM sale s
+    LEFT JOIN country c USING(country_id)
+    LEFT JOIN sale_album_assignment saa USING(sale_id)
+    LEFT JOIN album a USING(album_id)
+    LEFT JOIN artist_album_assignment aaa USING(album_id)
+    LEFT JOIN artist ar USING(artist_id);"""
+    df = pd.read_sql(query, _conn)
+    return df
+
+
+@st.cache_data
+def _load_combined_sale_data(_conn):
     sql = """
       SELECT s.*, c.*,
 
@@ -49,7 +79,8 @@ def _load_sale_data(_conn):
 
       LEFT JOIN album                    a   USING(album_id)
       LEFT JOIN artist_album_assignment  aaa USING(album_id)
-      LEFT JOIN artist                   ar  USING(artist_id);
+      LEFT JOIN artist                   ar  USING(artist_id)
+      ORDER BY album_sold_for DESC;
     """
     df = pd.read_sql(sql, _conn)
     df["utc_date"] = pd.to_datetime(df["utc_date"], utc=True)
@@ -249,6 +280,8 @@ def filter_bar(sale_df: pd.DataFrame):
     col1, col2, col3 = st.columns([3, 4, 4])
 
     with col1:
+        print(sale_df.columns)
+
         artist = st.selectbox(
             "Artist",
             options=sale_df["artist_name"].dropna().unique(),
@@ -394,14 +427,11 @@ def show_choropleth(df: pd.DataFrame):
 
 def main():
     load_dotenv()
-    st.set_page_config("Tracktion", "🎶", layout="wide")
 
-    col1, col2, col3 = st.columns(3)
-    with col2:
-        st.image("../documentation/tracktion_logo.png", width=180)
-
-    with get_connection() as conn:
-        df = _load_sale_data(conn)
+    with get_connection(ENV['DB_HOST'], ENV['DB_NAME'], ENV['DB_USER'],
+                        ENV['DB_PASSWORD'], ENV['DB_PORT']) as conn:
+        df = _load_combined_sale_data(conn)
+        print(df)
         artist, start_date, end_date, choice = filter_bar(df)
 
         filtered_df = df[
@@ -462,4 +492,7 @@ def main():
 
 
 if __name__ == "__main__":
+    local_css("style.css")
+    LOGO = "../documentation/tracktion_logo.png"
+    st.logo(LOGO, size="large")
     main()

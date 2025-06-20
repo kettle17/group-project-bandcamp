@@ -9,11 +9,11 @@ This directory contains the Streamlit configuration, used to deploy a web applic
 ```bash
 streamlit/
 ├── .streamlit/                   # Folder containing Streamlit theme configurations and secrets.
-├── Live_Data.py                  # Main Streamlit page containing the live data.
+├── Home.py                       # Main Streamlit page containing the live artist data.
 ├── pages/                        # Folder containing sub-Streamlit pages.
-    ├── Genres.py                 # Page showing all of the analytics for the genres.
-    ├── Alerts.py                 # Page showing the submission page for the alerts and daily reports.
     ├── Album_Art_Gallery.py      # Page showing a gallery of all of the album covers.
+    ├── Alerts.py                 # Page showing the submission page for the alerts and daily reports.
+    ├── Genres.py                 # Page showing all of the analytics for the genres.
     └── Privacy_Policy.py         # Page containing the projects privacy policy.
 ├── visualisations/               # Folder containing different visualisations for various charts.
 └── style.css                     # CSS script responsible for the dashboard font styling.

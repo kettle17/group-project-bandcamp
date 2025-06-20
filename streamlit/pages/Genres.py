@@ -2,7 +2,7 @@
 import datetime
 from os import environ as ENV
 
-from Live_Data import get_connection
+from Home import get_connection
 
 import pandas as pd
 import streamlit as st

@@ -6,7 +6,7 @@ import streamlit as st
 import streamlit_phone_number
 
 import pandas as pd
-from Live_Data import get_connection
+from Home import get_connection
 
 
 def local_css(file_name):
