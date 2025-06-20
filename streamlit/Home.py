@@ -90,7 +90,8 @@ def _load_combined_sale_data(_conn):
 def show_artist_image(artist_name: str):
     slug = "_".join(artist_name.lower().split()) + ".jpg"
     bucket = "c17-tracktion-daily-reports-and-images"
-    st.markdown("### Artist Portrait")
+    st.markdown(
+        f"<div style='text-align: center;'><h2>Artist Portrait</h2></div>", unsafe_allow_html=True)
     cfg = Config(region_name="eu-west-2", s3={"addressing_style": "virtual"})
     s3 = boto3.client(
         "s3",
@@ -326,12 +327,6 @@ def filter_bar(sale_df: pd.DataFrame):
         delta = pd.Timedelta(days=7)
         start_ts = end_ts - delta
 
-    # with col3:
-    #     if st.button("🔄 Reset"):
-    #         for k in ("artist", "range"):
-    #             st.session_state.pop(k, None)
-    #         st.experimental_rerun()
-
     return artist, start_ts, end_ts, choice
 
 
@@ -358,7 +353,8 @@ def _top_items(_c, artist, s, e, n=3):
 
 def show_top_media(conn, artist, s, e):
     data = _top_media(conn, artist, s, e, n=10)
-    st.markdown("### Top Media Sales")
+    st.markdown(
+        f"<div style='text-align: center;'><h2>Top Media Sales</h2></div>", unsafe_allow_html=True)
 
     if data.empty:
         st.info("No sales in this period")
@@ -392,7 +388,8 @@ def show_choropleth(df: pd.DataFrame):
             + d["merch_sold_for"].fillna(0)
         )
     )
-    st.markdown(f"### Global Purchase Map")
+    st.markdown(
+        f"<div style='text-align: center;'><h2>Global Purchase Map</h2></div>", unsafe_allow_html=True)
     geo = (df.groupby("country_name", as_index=False)
              .agg(total_revenue=("revenue", "sum")))
 
@@ -403,20 +400,20 @@ def show_choropleth(df: pd.DataFrame):
         geo, locations="iso_alpha", color="total_revenue",
         hover_name="country_name",
         hover_data={"total_revenue": ":,.2f"},
-        color_continuous_scale=px.colors.sequential.Agsunset,
+        color_continuous_scale=px.colors.sequential.Oranges,
     )
     fig.update_layout(
         template="plotly_dark",
-        paper_bgcolor="#000",
-        plot_bgcolor="#000",
+        paper_bgcolor="#181818",
+        plot_bgcolor="#181818",
         margin=dict(l=0, r=0, t=0, b=0),
         dragmode='pan',
     )
 
     fig.update_geos(
-        bgcolor="#000",
+        bgcolor="#181818",
         landcolor="rgba(255,255,255,0.05)",
-        lakecolor="#000",
+        lakecolor="#181818",
         coastlinecolor="grey",
         showcountries=True,
         countrycolor="grey",
@@ -431,7 +428,7 @@ def main():
     with get_connection(ENV['DB_HOST'], ENV['DB_NAME'], ENV['DB_USER'],
                         ENV['DB_PASSWORD'], ENV['DB_PORT']) as conn:
         df = _load_combined_sale_data(conn)
-        print(df)
+
         artist, start_date, end_date, choice = filter_bar(df)
 
         filtered_df = df[
@@ -455,9 +452,10 @@ def main():
         bucket = freq_map.get(choice, "week")
 
         ts_df = _time_series(conn, artist, start_date, end_date, bucket)
-
+        show_choropleth(filtered_df)
         if ts_df.empty:
             st.info("No revenue data for this period")
+
         else:
             ts_df_pivot = ts_df.pivot(
                 index="p", columns="cat", values="rev").fillna(0).reset_index()
@@ -466,13 +464,18 @@ def main():
             for col in required_cols:
                 if col not in ts_df_pivot.columns:
                     ts_df_pivot[col] = 0
-            st.markdown(f"### Revenue by {choice}")
+            left_c, center_c, right_c = st.columns(3)
+            with center_c:
+                st.markdown(
+                    f"<div style='text-align: center;'><h2>Revenue by {choice}</h2></div>", unsafe_allow_html=True)
+
             fig = px.line(
                 ts_df_pivot,
                 x="p",
                 y=required_cols,
                 markers=True,
-                labels={"p": "Time", "value": "£", "variable": "Product"}
+                labels={"p": "Time", "value": "£", "variable": "Product"},
+                color_discrete_sequence=["#FFA500", "#FF8C00", "#FF4500"]
             )
             fig.update_layout(
                 template="plotly_dark",
@@ -488,11 +491,12 @@ def main():
             )
             st.plotly_chart(fig, use_container_width=True)
 
-        show_choropleth(filtered_df)
-
 
 if __name__ == "__main__":
     local_css("style.css")
     LOGO = "../documentation/tracktion_logo.png"
-    st.logo(LOGO, size="large")
+
+    left_co, cent_co, last_co = st.columns(3)
+    with cent_co:
+        st.image(LOGO)
     main()
