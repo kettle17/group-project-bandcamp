@@ -7,6 +7,7 @@ from Home import get_connection, load_sale_data
 
 
 def load_album_data(_conn):
+    """Loads the album data."""
     load_dotenv()
 
     query = """

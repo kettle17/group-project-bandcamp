@@ -1,15 +1,14 @@
 """Main Streamlit dashboard for live data: Artist-overview dashboard(v2)"""
-import pandas as pd
+from datetime import timezone
+from os import environ as ENV
 import psycopg2
 import plotly.express as px
-import streamlit as st
 import country_converter
-from datetime import timedelta, timezone
 from dotenv import load_dotenv
 from botocore.config import Config
 import boto3
-from os import environ as ENV
-
+import pandas as pd
+import streamlit as st
 S3_ARTIST_IMG_PATH = "https://c17-tracktion-daily-reports.s3.eu-west-2.amazonaws.com/artist_images/"
 
 st.set_page_config(
@@ -34,11 +33,13 @@ def get_connection(host, dbname, user, password, port):
 def local_css(file_name):
     """Connects to the style.css script to add a font."""
     with open(file_name) as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+        st.markdown(f"<style>{f.read()}</style>",
+                    unsafe_allow_html=True)
 
 
 @st.cache_data
 def run_query(_conn, sql, params=None):
+    """Runs the queries for average summaries."""
     return pd.read_sql(sql, _conn, params=params)
 
 
@@ -57,6 +58,7 @@ def load_sale_data(_conn):
 
 @st.cache_data
 def _load_combined_sale_data(_conn):
+    """Loads the combined sale data."""
     sql = """
       SELECT s.*, c.*,
 
@@ -88,10 +90,11 @@ def _load_combined_sale_data(_conn):
 
 
 def show_artist_image(artist_name: str):
+    """Shows the artist image on dashboard."""
     slug = "_".join(artist_name.lower().split()) + ".jpg"
     bucket = "c17-tracktion-daily-reports-and-images"
     st.markdown(
-        f"<div style='text-align: center;'><h2>Artist Portrait</h2></div>", unsafe_allow_html=True)
+        "<div style='text-align: center;'><h2>Artist Portrait</h2></div>", unsafe_allow_html=True)
     cfg = Config(region_name="eu-west-2", s3={"addressing_style": "virtual"})
     s3 = boto3.client(
         "s3",
@@ -114,6 +117,7 @@ def show_artist_image(artist_name: str):
 
 @st.cache_data(ttl=900)
 def _top_media(_c, artist, s, e, n=5):
+    """Returns the top media of each artist."""
     sql = """
     WITH win AS (SELECT sale_id FROM sale
                  WHERE utc_date BETWEEN %(s)s AND %(e)s),
@@ -167,6 +171,7 @@ def _top_media(_c, artist, s, e, n=5):
 
 
 def avg(series):
+    """Calculates the average of a series of numbers."""
     v = series[series > 0].mean()
     return 0 if pd.isna(v) else v
 
@@ -197,6 +202,7 @@ def headline_box(filtered_df: pd.DataFrame, col):
 
 @st.cache_data(ttl=600)
 def _time_series(_c, artist, s, e, bucket):
+    """Runs the following queries."""
     sql = f"""
     WITH win AS (
         SELECT sale_id, date_trunc('{bucket}', utc_date) AS p
@@ -274,18 +280,26 @@ def show_time_series_fixed(filtered_df: pd.DataFrame, choice: str):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def filter_bar(sale_df: pd.DataFrame):
+def filter_bar(sale_df: pd.DataFrame, default_artist: str = "Four Tet"):
     """Sidebar widget: artist selector + date-range filter."""
-    st.subheader("🔍 Filters")
+    st.markdown(
+        "<div style='text-align: center;'><h2>Filters</h2></div>", unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([3, 4, 4])
+    another_spacer, spacer_left, col1, col2, col3, spacer_right = st.columns(
+        [1, 4, 4, 4, 4, 1])
 
     with col1:
-        print(sale_df.columns)
+        artist_options = sale_df["artist_name"].dropna().unique()
+        default_index = (
+            list(artist_options).index(default_artist)
+            if default_artist in artist_options
+            else 0
+        )
 
         artist = st.selectbox(
             "Artist",
-            options=sale_df["artist_name"].dropna().unique(),
+            options=artist_options,
+            index=default_index,
             key="artist",
         )
     with col2:
@@ -332,6 +346,7 @@ def filter_bar(sale_df: pd.DataFrame):
 
 @st.cache_data(ttl=900)
 def _top_items(_c, artist, s, e, n=3):
+    """Returns the top items sold per artist."""
     sql = """
     WITH win AS (SELECT sale_id FROM sale WHERE utc_date BETWEEN %(s)s AND %(e)s)
     SELECT tr.track_name        AS title,
@@ -352,9 +367,10 @@ def _top_items(_c, artist, s, e, n=3):
 
 
 def show_top_media(conn, artist, s, e):
+    """Shows the top media items onto the dashboard."""
     data = _top_media(conn, artist, s, e, n=10)
     st.markdown(
-        f"<div style='text-align: center;'><h2>Top Media Sales</h2></div>", unsafe_allow_html=True)
+        "<div style='text-align: center;'><h2>Top Media Sales</h2></div>", unsafe_allow_html=True)
 
     if data.empty:
         st.info("No sales in this period")
@@ -381,6 +397,7 @@ def show_top_media(conn, artist, s, e):
 
 
 def show_choropleth(df: pd.DataFrame):
+    """Shows the chloropleth map onto streamlit."""
     df = df.assign(
         revenue=lambda d: (
             d["track_sold_for"].fillna(0)
@@ -389,7 +406,8 @@ def show_choropleth(df: pd.DataFrame):
         )
     )
     st.markdown(
-        f"<div style='text-align: center;'><h2>Global Purchase Map</h2></div>", unsafe_allow_html=True)
+        "<div style='text-align: center;'><h2>Global Purchase Map</h2></div>",
+        unsafe_allow_html=True)
     geo = (df.groupby("country_name", as_index=False)
              .agg(total_revenue=("revenue", "sum")))
 
@@ -423,6 +441,7 @@ def show_choropleth(df: pd.DataFrame):
 
 
 def main():
+    """Main function that calls all of the previous functions."""
     load_dotenv()
 
     with get_connection(ENV['DB_HOST'], ENV['DB_NAME'], ENV['DB_USER'],
@@ -453,9 +472,9 @@ def main():
 
         ts_df = _time_series(conn, artist, start_date, end_date, bucket)
         show_choropleth(filtered_df)
+
         if ts_df.empty:
             st.info("No revenue data for this period")
-
         else:
             ts_df_pivot = ts_df.pivot(
                 index="p", columns="cat", values="rev").fillna(0).reset_index()
@@ -467,7 +486,8 @@ def main():
             left_c, center_c, right_c = st.columns(3)
             with center_c:
                 st.markdown(
-                    f"<div style='text-align: center;'><h2>Revenue by {choice}</h2></div>", unsafe_allow_html=True)
+                    f"<div style='text-align: center;'><h2>Revenue by {choice}</h2></div>",
+                    unsafe_allow_html=True)
 
             fig = px.line(
                 ts_df_pivot,
@@ -490,6 +510,45 @@ def main():
                 margin=dict(t=40, r=10)
             )
             st.plotly_chart(fig, use_container_width=True)
+
+        st.markdown(
+            f"<div style='text-align: center;'><h2>Free Downloads vs Revenue (per Artist)</h2></div>",
+            unsafe_allow_html=True)
+
+        free_downloads_df = (
+            filtered_df[filtered_df["track_sold_for"] == 0]
+            .groupby("artist_name")
+            .size()
+            .reset_index(name="free_downloads")
+        )
+
+        revenue_df = (
+            filtered_df[filtered_df["track_sold_for"] > 0]
+            .groupby("artist_name")["track_sold_for"]
+            .sum()
+            .reset_index(name="total_revenue")
+        )
+
+        summary_df = pd.merge(free_downloads_df, revenue_df,
+                              on="artist_name", how="inner")
+
+        if not summary_df.empty:
+            fig = px.scatter(
+                summary_df,
+                x="free_downloads",
+                y="total_revenue",
+                text="artist_name",
+                title="Free Downloads (sold_for = 0) vs Revenue",
+                labels={"free_downloads": "Free Downloads",
+                        "total_revenue": "Revenue (£)"},
+                color="artist_name",
+                color_discrete_sequence=px.colors.sequential.Oranges
+            )
+            fig.update_traces(textposition="top center")
+            fig.update_layout(template="plotly_dark", height=400)
+            st.plotly_chart(fig, use_container_width=True)
+        else:
+            st.info("No data to display for free downloads vs revenue.")
 
 
 if __name__ == "__main__":
