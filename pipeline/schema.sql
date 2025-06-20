@@ -15,7 +15,7 @@ DROP TABLE IF EXISTS tag;
 DROP TABLE IF EXISTS country;
 
 CREATE TABLE country (
-    country_id SMALLINT GENERATED ALWAYS AS IDENTITY,
+    country_id BIGINT GENERATED ALWAYS AS IDENTITY,
     country_name VARCHAR(60) NOT NULL UNIQUE,
     PRIMARY KEY (country_id)
 );
@@ -65,10 +65,9 @@ CREATE TABLE track (
 CREATE TABLE sale (
     sale_id BIGINT GENERATED ALWAYS AS IDENTITY,
     utc_date TIMESTAMP NOT NULL,
-    country_id SMALLINT NOT NULL,
+    country_id BIGINT NOT NULL,
     PRIMARY KEY (sale_id),
     FOREIGN KEY (country_id) REFERENCES country (country_id)
-    
 );
 
 -- Sale assignment tables 
