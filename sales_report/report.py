@@ -11,6 +11,11 @@ import psycopg2
 from psycopg2.extensions import connection
 from psycopg2.extras import RealDictCursor
 from boto3 import client
+from email import encoders
+from email.mime.base import MIMEBase
+from email.mime.application import MIMEApplication
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 from queries import (get_top_artists_by_album_sales, get_top_artists_by_track_sales,
                      get_top_genres_by_album_sales, get_top_genres_by_track_sales,
@@ -175,10 +180,35 @@ def generate_pdf_and_upload_to_s3():
 
     generate_report(total_album_sales, total_track_sales, total_merchandise_sales,
                     total_album_revenue, total_track_revenue, total_merchandise_revenue)
-
+    report_path = f"daily_bandcamp_report_{date.today()}.pdf"
     s3_client = connect_to_s3_client()
     upload_file_to_s3(
-        s3_client, f"daily_bandcamp_report_{date.today()}.pdf")
+        s3_client, report_path)
+    send_email_with_attachment(report_path)
+
+
+def send_email_with_attachment(path: str):
+    """Sends an email via AWS SES"""
+    msg = MIMEMultipart()
+    msg['Subject'] = "Tracktion Analytics - Daily Report"
+    msg['From'] = "trainee.xac.parnell@sigmalabs.co.uk"
+    msg['To'] = "trainee.xac.parnell@sigmalabs.co.uk"
+
+    body = MIMEText("Please find the attached PDF summary pulled from BandCamp.", "plain")
+    msg.attach(body)
+
+    with open(path, 'rb') as attachment:
+        part = MIMEApplication(attachment.read())
+        part.add_header('Content-Disposition', 'attachment', filename=path)
+
+    msg.attach(part)
+    ses_client = client('ses', region_name='eu-west-2')
+    response = ses_client.send_raw_email(
+        Source='trainee.xac.parnell@sigmalabs.co.uk',
+        Destinations=['trainee.xac.parnell@sigmalabs.co.uk'],
+        RawMessage={'Data': msg.as_string()}
+    )
+    print(response)
 
 
 def report_lambda_handler(event, context):
@@ -197,5 +227,4 @@ def report_lambda_handler(event, context):
 
 
 if __name__ == "__main__":
-
     generate_pdf_and_upload_to_s3()
