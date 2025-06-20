@@ -8,9 +8,20 @@ This directory contains the Terraform configuration used to provision and manage
 
 ```bash
 terraform/
-├── main.tf           # Core Terraform configuration for RDS, networking, and security groups
-├── variables.tf      # Input variables for configuration (e.g., database credentials, subnet IDs, etc.)
-└── terraform.tfvars  # User-defined values for the variables (should be created manually)
+├── alerts_lambda/            # Folder containing the alerts lambda architecture in terraform.
+    ├── alerts_lambda.tf      # Terraform setup for alerts lambda.
+    ├── variables.tf          # Terraform variables for alerts lambda.
+├── etl_lambda/               # Folder containing the ETL lambda architecture in terraform.
+    ├── etl_lambda.tf         # Terraform setup for ETL lambda.
+    ├── variables.tf          # Terraform variables for ETL lambda.
+├── reports_lambda/           # Folder containing the reports lambda architecture in terraform.
+    ├── reports_lambda.tf     # Terraform setup for reports lambda.
+    ├── variables.tf          # Terraform variables for reports lambda.
+├── storage/                  # Folder containing the database architecture in terraform. 
+    ├── database.tf           # Terraform setup for the RDS database.
+    ├── s3_bucket.tf          # Terraform setup for the S3 bucket.
+    ├── variables.tf          # Terraform variables for database architecture.
+    
 ```
 ---
 
