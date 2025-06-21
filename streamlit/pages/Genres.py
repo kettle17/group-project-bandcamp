@@ -315,7 +315,8 @@ def display_wordcloud_menu() -> None:
 
 if __name__ == "__main__":
     local_css("../style.css")
-    LOGO = "../documentation/tracktion_logo.png"
+    LOGO = os.path.join(os.path.dirname(__file__),
+                        "../../documentation/tracktion_logo.png")
     st.logo(LOGO, size="large")
 
     st.markdown(
