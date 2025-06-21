@@ -1,6 +1,7 @@
 """Main Streamlit dashboard for live data: Artist-overview dashboard(v2)"""
 from datetime import timezone
 from os import environ as ENV
+import os
 import psycopg2
 import plotly.express as px
 import country_converter
@@ -32,7 +33,9 @@ def get_connection(host, dbname, user, password, port):
 
 def local_css(file_name):
     """Connects to the style.css script to add a font."""
-    with open(file_name) as f:
+    base_dir = os.path.dirname(__file__)  # directory of current script
+    css_path = os.path.join(base_dir, file_name)
+    with open(css_path) as f:
         st.markdown(f"<style>{f.read()}</style>",
                     unsafe_allow_html=True)
 

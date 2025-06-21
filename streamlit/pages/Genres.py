@@ -1,5 +1,6 @@
 """Streamlit page for genre page."""
 import datetime
+import os
 from os import environ as ENV
 
 from Home import get_connection
@@ -11,8 +12,12 @@ from wordcloud import WordCloud
 
 def local_css(file_name):
     """Connects to the style.css script to add a font."""
-    with open(file_name) as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    base_dir = os.path.dirname(__file__)  # directory of current script
+    css_path = os.path.join(base_dir, file_name)
+    print(css_path)
+    with open(css_path) as f:
+        st.markdown(f"<style>{f.read()}</style>",
+                    unsafe_allow_html=True)
 
 
 def get_fresh_connection():
@@ -309,7 +314,7 @@ def display_wordcloud_menu() -> None:
 
 
 if __name__ == "__main__":
-    local_css("style.css")
+    local_css("../style.css")
     LOGO = "../documentation/tracktion_logo.png"
     st.logo(LOGO, size="large")
 
