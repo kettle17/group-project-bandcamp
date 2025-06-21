@@ -1,6 +1,7 @@
 """Page for alerts data."""
 import re
 from os import environ as ENV
+import os
 from dotenv import load_dotenv
 import streamlit as st
 import streamlit_phone_number
@@ -11,8 +12,11 @@ from Home import get_connection
 
 def local_css(file_name):
     """Connects to the style.css script to add a font."""
-    with open(file_name, encoding='utf-8') as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    base_dir = os.path.dirname(__file__)  # directory of current script
+    css_path = os.path.join(base_dir, file_name)
+    with open(css_path) as f:
+        st.markdown(f"<style>{f.read()}</style>",
+                    unsafe_allow_html=True)
 
 
 def get_fresh_connection():
@@ -104,7 +108,7 @@ def return_submit_alert_request() -> dict:
 
 def generate_header() -> None:
     """Generates the header of the alerts dashboard."""
-    local_css("style.css")
+    local_css("../style.css")
     logo = "../documentation/tracktion_logo.png"
     st.logo(logo, size="large")
 
@@ -114,6 +118,7 @@ def generate_header() -> None:
 
 if __name__ == "__main__":
     load_dotenv()
+    local_css("../style.css")
 
     generate_header()
 

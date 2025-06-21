@@ -1,16 +1,20 @@
 """Streamlit page for the Privacy Policy (GDPR)."""
 import streamlit as st
+import os
 
 
 def local_css(file_name):
     """Connects to the style.css script to add a font."""
-    with open(file_name, encoding='utf-8') as f:
-        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+    base_dir = os.path.dirname(__file__)  # directory of current script
+    css_path = os.path.join(base_dir, file_name)
+    with open(css_path) as f:
+        st.markdown(f"<style>{f.read()}</style>",
+                    unsafe_allow_html=True)
 
 
 if __name__ == "__main__":
 
-    local_css("style.css")
+    local_css("../style.css")
     LOGO = "../documentation/tracktion_logo.png"
     st.logo(LOGO, size="large")
 
