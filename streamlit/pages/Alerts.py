@@ -109,7 +109,8 @@ def return_submit_alert_request() -> dict:
 def generate_header() -> None:
     """Generates the header of the alerts dashboard."""
     local_css("../style.css")
-    logo = "../documentation/tracktion_logo.png"
+    logo = os.path.join(os.path.dirname(__file__),
+                        "../../documentation/tracktion_logo.png")
     st.logo(logo, size="large")
 
     st.markdown(

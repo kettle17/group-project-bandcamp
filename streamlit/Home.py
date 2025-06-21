@@ -517,7 +517,9 @@ def main():
 
 if __name__ == "__main__":
     local_css("style.css")
-    LOGO = "../documentation/tracktion_logo.png"
+
+    LOGO = os.path.join(os.path.dirname(__file__),
+                        "../documentation/tracktion_logo.png")
 
     left_co, cent_co, last_co = st.columns(3)
     with cent_co:
