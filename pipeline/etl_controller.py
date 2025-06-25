@@ -1,7 +1,6 @@
 """Script that combines all individual parts of the ETL into one."""
 # pylint: disable=broad-except
 
-import pandas as pd
 from dotenv import load_dotenv
 from utilities import get_logger, set_logger
 from extract import run_extract

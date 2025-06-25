@@ -12,7 +12,7 @@ from Home import get_connection
 
 def local_css(file_name):
     """Connects to the style.css script to add a font."""
-    base_dir = os.path.dirname(__file__)  # directory of current script
+    base_dir = os.path.dirname(__file__)
     css_path = os.path.join(base_dir, file_name)
     with open(css_path) as f:
         st.markdown(f"<style>{f.read()}</style>",

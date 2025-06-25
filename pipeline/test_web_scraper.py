@@ -4,7 +4,7 @@
 from unittest.mock import Mock, patch
 import pytest
 from bs4 import BeautifulSoup
-from web_scraper import get_relevant_html, get_release_date, filter_tags, get_genres, get_release_date_and_genres
+from web_scraper import get_release_date, filter_tags, get_genres, get_release_date_and_genres
 from utilities import set_logger, get_logger
 
 set_logger()

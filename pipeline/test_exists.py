@@ -1,7 +1,6 @@
 # pylint: skip-file
 
 """Test file that stops pytest from failing if there are no other tests."""
-import pytest
 import os
 
 

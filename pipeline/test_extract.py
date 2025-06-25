@@ -5,13 +5,12 @@
 import pytest
 import os
 import json
-from unittest.mock import patch, mock_open
+from unittest.mock import patch
 from extract import (
     get_api_request,
     fetch_api_data,
     validate_api_data,
     collect_api_rows_and_columns,
-    save_to_csv,
     run_extract,
     get_time_offset
 )

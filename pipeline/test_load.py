@@ -4,14 +4,12 @@
 from unittest.mock import patch, MagicMock
 import pytest
 import pandas as pd
-import psycopg2
 from psycopg2.extras import RealDictCursor
 from load import (
     get_db_connection,
     run_load,
     copy_df,
-    build_frames,
-    insert_dimension_data
+    build_frames
 )
 
 
@@ -123,9 +121,7 @@ class TestRunLoad:
         mock_build_frames,
         mock_get_db_conn,
         mock_insert_dimension_data,
-        mock_copy_df,
-        sample_df,
-        bad_df
+        sample_df
     ):
         mock_get_db_conn = MagicMock()
         mock_get_db_conn.cur.rowcount.return_value = 5
