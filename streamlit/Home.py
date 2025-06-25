@@ -443,6 +443,119 @@ def show_choropleth(df: pd.DataFrame):
     st.plotly_chart(fig, use_container_width=True)
 
 
+def show_top_artists(df: pd.DataFrame, top_n=10):
+    df = df.assign(
+        revenue=lambda d: (
+            d["track_sold_for"].fillna(0)
+            + d["album_sold_for"].fillna(0)
+            + d["merch_sold_for"].fillna(0)
+        )
+    )
+    top_artists = df.groupby("artist_name", as_index=False)[
+        "revenue"].sum()
+    top_artists = top_artists.sort_values(
+        by="revenue", ascending=False).head(top_n)
+
+    fig = px.bar(
+        top_artists,
+        x="artist_name",
+        y="revenue",
+        text_auto=".2s",
+        title=f"Top {top_n} Artists by Revenue",
+        labels={"revenue": "£", "artist_name": "Artist"},
+        color_discrete_sequence=["#FFA500", "#FF8C00", "#FF4500"]
+    )
+    fig.update_layout(template="plotly_dark", height=400)
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def show_cumulative_sales(df: pd.DataFrame):
+    df = df.loc[:, ~df.columns.duplicated()]
+    df["revenue"] = (
+        df["track_sold_for"].fillna(0)
+        + df["album_sold_for"].fillna(0)
+        + df["merch_sold_for"].fillna(0)
+    )
+    df = df.sort_values("utc_date")
+    df["cumulative_revenue"] = df["revenue"].cumsum()
+    fig = px.line(
+        df,
+        x="utc_date",
+        y="cumulative_revenue",
+        title="Cumulative Revenue Over Time",
+        labels={"utc_date": "Date", "cumulative_revenue": "£"},
+        color_discrete_sequence=["#FFA500", "#FF8C00", "#FF4500"]
+    )
+    fig.update_layout(template="plotly_dark", height=300)
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def show_sales_distribution(df: pd.DataFrame):
+    values = [
+        df["track_sold_for"].fillna(0).sum(),
+        df["album_sold_for"].fillna(0).sum(),
+        df["merch_sold_for"].fillna(0).sum()
+    ]
+    labels = ["Track", "Album", "Merch"]
+
+    fig = px.pie(
+        names=labels,
+        values=values,
+        title="Revenue Share by Product Type",
+        hole=0.3,
+        color_discrete_sequence=["#FFA500", "#FF8C00", "#FF4500"]
+    )
+    fig.update_layout(template="plotly_dark")
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def show_download_pattern(df: pd.DataFrame):
+    df = df.copy()
+    df["weekday"] = df["utc_date"].dt.day_name()
+
+    downloads_df = df[df["track_sold_for"].fillna(0) <= 0.01]
+
+    if downloads_df.empty:
+        st.info("No free downloads recorded in this time range.")
+        return
+
+    weekday_counts = downloads_df["weekday"].value_counts().reindex([
+        "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"
+    ]).fillna(0)
+
+    fig = px.bar(
+        x=weekday_counts.index,
+        y=weekday_counts.values,
+        title="Free Downloads by Weekday",
+        labels={"x": "Weekday", "y": "Downloads"},
+        color_discrete_sequence=["#FFA500", "#FF8C00", "#FF4500"]
+    )
+    fig.update_layout(template="plotly_dark", height=300)
+    st.plotly_chart(fig, use_container_width=True)
+
+
+def show_monthly_sales_trend(df: pd.DataFrame):
+    df["month"] = df["utc_date"].dt.to_period("M").dt.to_timestamp()
+    df["revenue"] = (
+        df["track_sold_for"].fillna(0)
+        + df["album_sold_for"].fillna(0)
+        + df["merch_sold_for"].fillna(0)
+    )
+
+    monthly = df.groupby("month", as_index=False)["revenue"].sum()
+
+    fig = px.area(
+        monthly,
+        x="month",
+        y="revenue",
+        title="Monthly Revenue Trend (All Artists)",
+        labels={"month": "Month", "revenue": "£"},
+        color_discrete_sequence=["#FFA500", "#FF8C00", "#FF4500"]
+    )
+    fig.update_layout(template="plotly_dark", height=350)
+    st.plotly_chart(fig, use_container_width=True)
+
+
 def main():
     """Main function that calls all of the previous functions."""
     load_dotenv()
@@ -489,11 +602,12 @@ def main():
             left_c, center_c, right_c = st.columns(3)
             with center_c:
                 st.markdown(
-                    f"<div style='text-align: center;'><h2>Revenue by {choice}</h2></div>",
+                    f"<div style='text-align: center;'><h2>Further Analysis by {choice}</h2></div>",
                     unsafe_allow_html=True)
 
             fig = px.line(
                 ts_df_pivot,
+                title="Revenue Overtime",
                 x="p",
                 y=required_cols,
                 markers=True,
@@ -512,7 +626,23 @@ def main():
                 ),
                 margin=dict(t=40, r=10)
             )
+
             st.plotly_chart(fig, use_container_width=True)
+
+            show_sales_distribution(filtered_df)
+            cols1, cols2 = st.columns(2)
+            with cols1:
+                show_top_artists(df)
+
+            with cols2:
+                show_cumulative_sales(filtered_df)
+
+            st.divider()
+            st.markdown("### Additional Insights")
+
+            show_download_pattern(df)
+
+            show_monthly_sales_trend(df)
 
 
 if __name__ == "__main__":
