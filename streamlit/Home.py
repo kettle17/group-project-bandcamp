@@ -18,6 +18,21 @@ st.set_page_config(
     layout="wide"
 )
 
+st.markdown("""
+    <style>
+    @import url('https://fonts.google.com/share?selection.family=Quicksand:wght@300..700');
+
+    html, body, [class*="css"] {
+        font-family: 'Quicksand', sans-serif !important;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Quicksand', sans-serif !important;
+        font-weight: 200 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 
 def get_connection(host, dbname, user, password, port):
     """Create and cache a SQL Server connection using pyodbc."""
