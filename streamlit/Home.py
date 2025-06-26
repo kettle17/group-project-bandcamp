@@ -459,6 +459,7 @@ def show_choropleth(df: pd.DataFrame):
 
 
 def show_top_artists(df: pd.DataFrame, top_n=10):
+    """Shows the top artists as a bar chart."""
     df = df.assign(
         revenue=lambda d: (
             d["track_sold_for"].fillna(0)
@@ -485,6 +486,7 @@ def show_top_artists(df: pd.DataFrame, top_n=10):
 
 
 def show_cumulative_sales(df: pd.DataFrame):
+    """Shows the revenue overtime as a line graph."""
     df = df.loc[:, ~df.columns.duplicated()]
     df["revenue"] = (
         df["track_sold_for"].fillna(0)
@@ -506,6 +508,7 @@ def show_cumulative_sales(df: pd.DataFrame):
 
 
 def show_sales_distribution(df: pd.DataFrame):
+    """Shows pie chart of the revenue per product type."""
     values = [
         df["track_sold_for"].fillna(0).sum(),
         df["album_sold_for"].fillna(0).sum(),
@@ -525,6 +528,7 @@ def show_sales_distribution(df: pd.DataFrame):
 
 
 def show_download_pattern(df: pd.DataFrame):
+    """Shows bar chart of the download patterns throghout the week."""
     df = df.copy()
     df["weekday"] = df["utc_date"].dt.day_name()
 
