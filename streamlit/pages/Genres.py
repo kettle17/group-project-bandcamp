@@ -92,6 +92,9 @@ def find_most_popular_tags(sales: pd.DataFrame) -> pd.DataFrame:
     """Filters the most popular tags for albums/tracks,
     returning a Dataframe of the tag, the quantity it appeared,
     the overall sale value, and the top 3 countries for it."""
+    st.markdown("""
+    <link href="https://fonts.google.com/share?selection.family=Bebas+Neue" rel="stylesheet">
+""", unsafe_allow_html=True)
     sales_unique = sales.drop_duplicates(
         subset=['sale_id', 'tag_id'])
     tag_stats = (sales_unique.groupby(['tag_id', 'tag_name']).agg(
@@ -317,7 +320,7 @@ if __name__ == "__main__":
     local_css("../style.css")
     LOGO = os.path.join(os.path.dirname(__file__),
                         "../../documentation/tracktion_logo.png")
-    st.logo(LOGO, size="large")
+    st.sidebar.image(LOGO, width=500)
 
     st.markdown(
         "<h1 style='text-align: center;'>Genres</h1>", unsafe_allow_html=True)

@@ -534,28 +534,6 @@ def show_download_pattern(df: pd.DataFrame):
     st.plotly_chart(fig, use_container_width=True)
 
 
-def show_monthly_sales_trend(df: pd.DataFrame):
-    df["month"] = df["utc_date"].dt.to_period("M").dt.to_timestamp()
-    df["revenue"] = (
-        df["track_sold_for"].fillna(0)
-        + df["album_sold_for"].fillna(0)
-        + df["merch_sold_for"].fillna(0)
-    )
-
-    monthly = df.groupby("month", as_index=False)["revenue"].sum()
-
-    fig = px.area(
-        monthly,
-        x="month",
-        y="revenue",
-        title="Monthly Revenue Trend (All Artists)",
-        labels={"month": "Month", "revenue": "£"},
-        color_discrete_sequence=["#FFA500", "#FF8C00", "#FF4500"]
-    )
-    fig.update_layout(template="plotly_dark", height=350)
-    st.plotly_chart(fig, use_container_width=True)
-
-
 def main():
     """Main function that calls all of the previous functions."""
     load_dotenv()
@@ -641,8 +619,6 @@ def main():
             st.markdown("### Additional Insights")
 
             show_download_pattern(df)
-
-            show_monthly_sales_trend(df)
 
 
 if __name__ == "__main__":
