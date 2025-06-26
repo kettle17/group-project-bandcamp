@@ -9,6 +9,21 @@ import pandas as pd
 import streamlit as st
 from wordcloud import WordCloud
 
+st.markdown("""
+    <style>
+    @import url('https://fonts.google.com/share?selection.family=Quicksand:wght@300..700');
+
+    html, body, [class*="css"] {
+        font-family: 'Quicksand', sans-serif !important;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Quicksand', sans-serif !important;
+        font-weight: 200 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 
 def local_css(file_name):
     """Connects to the style.css script to add a font."""
@@ -92,6 +107,9 @@ def find_most_popular_tags(sales: pd.DataFrame) -> pd.DataFrame:
     """Filters the most popular tags for albums/tracks,
     returning a Dataframe of the tag, the quantity it appeared,
     the overall sale value, and the top 3 countries for it."""
+    st.markdown("""
+    <link href="https://fonts.google.com/share?selection.family=Bebas+Neue" rel="stylesheet">
+""", unsafe_allow_html=True)
     sales_unique = sales.drop_duplicates(
         subset=['sale_id', 'tag_id'])
     tag_stats = (sales_unique.groupby(['tag_id', 'tag_name']).agg(
@@ -317,7 +335,7 @@ if __name__ == "__main__":
     local_css("../style.css")
     LOGO = os.path.join(os.path.dirname(__file__),
                         "../../documentation/tracktion_logo.png")
-    st.logo(LOGO, size="large")
+    st.sidebar.image(LOGO, width=500)
 
     st.markdown(
         "<h1 style='text-align: center;'>Genres</h1>", unsafe_allow_html=True)

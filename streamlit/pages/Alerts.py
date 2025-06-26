@@ -9,6 +9,21 @@ import streamlit_phone_number
 import pandas as pd
 from Home import get_connection
 
+st.markdown("""
+    <style>
+    @import url('https://fonts.google.com/share?selection.family=Quicksand:wght@300..700');
+
+    html, body, [class*="css"] {
+        font-family: 'Quicksand', sans-serif !important;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Quicksand', sans-serif !important;
+        font-weight: 200 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 
 def local_css(file_name):
     """Connects to the style.css script to add a font."""
@@ -109,9 +124,9 @@ def return_submit_alert_request() -> dict:
 def generate_header() -> None:
     """Generates the header of the alerts dashboard."""
     local_css("../style.css")
-    logo = os.path.join(os.path.dirname(__file__),
+    LOGO = os.path.join(os.path.dirname(__file__),
                         "../../documentation/tracktion_logo.png")
-    st.logo(logo, size="large")
+    st.sidebar.image(LOGO, width=500)
 
     st.markdown(
         "<h1 style='text-align: center;'>Sign up to receive alerts</h1>", unsafe_allow_html=True)

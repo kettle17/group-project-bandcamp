@@ -6,6 +6,21 @@ from dotenv import load_dotenv
 import streamlit as st
 from Home import get_connection, load_sale_data
 
+st.markdown("""
+    <style>
+    @import url('https://fonts.google.com/share?selection.family=Quicksand:wght@300..700');
+
+    html, body, [class*="css"] {
+        font-family: 'Quicksand', sans-serif !important;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: 'Quicksand', sans-serif !important;
+        font-weight: 200 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 
 def local_css(file_name):
     """Connects to the style.css script to add a font."""
@@ -33,7 +48,7 @@ if __name__ == "__main__":
     local_css("../style.css")
     LOGO = os.path.join(os.path.dirname(__file__),
                         "../../documentation/tracktion_logo.png")
-    st.logo(LOGO, size="large")
+    st.sidebar.image(LOGO, width=500)
 
     conn = get_connection(
         ENV['DB_HOST'],
